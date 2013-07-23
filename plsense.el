@@ -154,8 +154,9 @@
 (make-variable-buffer-local 'plsense--current-ready-status)
 (defvar plsense--current-ready-check-timer nil)
 (make-variable-buffer-local 'plsense--current-ready-check-timer)
-(defvar plsense--current-ready-check-proc nil)
-(make-variable-buffer-local 'plsense--current-ready-check-proc)
+
+(defvar plsense--last-add-source "")
+(make-variable-buffer-local 'plsense--last-add-source)
 
 (defvar plsense--last-assist-start-point 0)
 (make-variable-buffer-local 'plsense--last-assist-start-point)
@@ -219,7 +220,7 @@
 (defun plsense-server-refresh ()
   "Refresh server process."
   (interactive)
-  (let* ((ret (plsense--get-server-response "refresh" :waitsec 60))
+  (let* ((ret (plsense--get-server-response "refresh" :waitsec 60 :force t))
          (ret (replace-regexp-in-string "\n" "" ret)))
     (cond ((string= ret "Done")
            (plsense--info "Referesh server is done.")
@@ -231,7 +232,10 @@
 (defun plsense-server-task ()
   "Show information of active task on server process."
   (interactive)
-  (message (plsense--get-server-response "ps" :waitsec 10 :force t :ignore-done t)))
+  (let ((ret (plsense--get-server-response "ps" :waitsec 10 :force t :ignore-done t)))
+    (if (string= ret "")
+        (message "[PlSense] no task now.")
+      (message ret))))
 
 (defun plsense-buffer-is-ready ()
   "Show whether or not plsense is available on current buffer."
@@ -253,6 +257,7 @@
                                 (+ (point) 1))
                               (point-min))))
                (code (buffer-substring-no-properties startpt endpt))
+               (code (replace-regexp-in-string plsense--regexp-comment "" code))
                (code (replace-regexp-in-string "\n" "" code)))
           (when (and (plsense--set-current-file)
                      (plsense--set-current-package)
@@ -281,6 +286,7 @@
                                 (+ (point) 1))
                               (point-min))))
                (code (buffer-substring-no-properties startpt endpt))
+               (code (replace-regexp-in-string plsense--regexp-comment "" code))
                (code (replace-regexp-in-string "\n" "" code)))
           (when (and (plsense--set-current-file)
                      (plsense--set-current-package)
@@ -409,7 +415,7 @@
 
 (defvar ac-source-plsense-sub
   '((candidates . plsense--get-ac-candidates)
-    (prefix . "&\\([a-zA-Z0-9_:]*\\)")
+    (prefix . "&\\([a-zA-Z0-9_:]+\\)")
     (symbol . "s")
     (document . plsense--get-ac-document)
     (requires . 0)
@@ -501,14 +507,18 @@
           (plsense--info "Open %s is done." fpath)
           (message "[PlSense] Now loading '%s' ..." (buffer-name))
           (sleep-for 1)
+          (setq plsense--current-file fpath)
+          (setq plsense--current-package "main")
+          (setq plsense--current-method "")
           (setq plsense--current-ready-status "Now Loading")
           (plsense--run-ready-check-timer))))))
 
 (defun plsense--update-buffer (buff)
   (let* ((fpath (buffer-file-name buff)))
     (when (and (file-exists-p fpath)
-               (not (file-directory-p fpath)))
-      (plsense--request-server (concat "update " (expand-file-name fpath))))))
+               (not (file-directory-p fpath))
+               plsense--server-start-p)
+      (plsense--request-server (concat "update " (expand-file-name fpath)) t))))
 
 (defun plsense--add-pointed-source ()
   (save-excursion
@@ -523,12 +533,15 @@
                                 (point))
                               (point-min)))
                  (code (buffer-substring-no-properties startpt currpt))
+                 (code (replace-regexp-in-string plsense--regexp-comment "" code))
                  (code (replace-regexp-in-string "\n" "" code)))
-            (plsense--trace "Start add source : %s" code)
-            (when (and (plsense--set-current-file)
-                       (plsense--set-current-package)
-                       (plsense--set-current-method))
-              (plsense--request-server (concat "codeadd " code))))))
+            (when (not (string= code plsense--last-add-source))
+              (setq plsense--last-add-source code)
+              (plsense--trace "Start add source : %s" code)
+              (when (and (plsense--set-current-file)
+                         (plsense--set-current-package)
+                         (plsense--set-current-method))
+                (plsense--request-server (concat "codeadd " code)))))))
       (yaxception:catch 'error e
         (plsense--error "failed add pointed source : %s\n%s"
                         (yaxception:get-text e)
@@ -621,6 +634,7 @@
                                 (+ (point) 1)))
                             (point-min)))
                (code (buffer-substring-no-properties startpt currpt))
+               (code (replace-regexp-in-string plsense--regexp-comment "" code))
                (code (replace-regexp-in-string "\n" "" code)))
           (if (and (= startpt plsense--last-assist-start-point)
                    (> currpt plsense--last-assist-end-point)
@@ -691,6 +705,7 @@
                  (curridx (length (split-string arg-text ",")))
                  (code (or (when (< startpt bracept) (buffer-substring-no-properties startpt bracept))
                            ""))
+                 (code (replace-regexp-in-string plsense--regexp-comment "" code))
                  (code (replace-regexp-in-string "\n" "" code))
                  (subinfo (cond ((and (= startpt plsense--last-eldoc-start-point)
                                       (= bracept plsense--last-eldoc-end-point)
@@ -778,7 +793,7 @@
 
 (defun plsense--start-process ()
   (if (not (file-exists-p plsense--config-path))
-      (message "[PlSense] Not exist '%s'. do 'plsense' on shell." (expand-file-name plsense--config-path))
+      (error "[PlSense] Not exist '%s'. do 'plsense' on shell." (expand-file-name plsense--config-path))
     (plsense--info "Start plsense process.")
     (let ((proc (start-process-shell-command "plsense" nil "plsense --interactive"))
           (waiti 0))
@@ -815,6 +830,9 @@
         ((string-match "\\`Not found \\[[a-zA-Z0-9_]+\\] in \\[[a-zA-Z0-9:_]+\\] of \\[\\(.+\\)\\]" res)
          (message "[PlSense] Please exec 'plsense-reopen-current-buffer' on '%s'" (match-string-no-properties 1 res))
          (sleep-for 1))
+        ((string= "Not yet set current file/module by onfile/onmod command" res)
+         (message "[PlSense] Please exec 'plsense-reopen-current-buffer' on '%s'" (buffer-name))
+         (sleep-for 1))
         ((string-match "\\`Check the module status" res)
          nil)
         (t
@@ -822,40 +840,63 @@
          (sleep-for 1))))
 
 (defun plsense--run-ready-check-timer ()
-  (let ((fpath (buffer-file-name)))
+  (let ((fpath (buffer-file-name))
+        (procnm (plsense--get-ready-check-process_name (buffer-name))))
     (when (and (file-exists-p fpath)
                (not (file-directory-p fpath))
                (plsense--active-p)
                (not (plsense--ready-p)))
       (plsense--debug "Set timer to check ready for %s" fpath)
+      (when (processp (get-process procnm))
+        (kill-process procnm))
+      (plsense--cancel-check-ready)
       (setq plsense--current-ready-check-timer
-            (run-with-idle-timer 1 t 'plsense--start-check-ready fpath)))))
+            (run-with-timer 5 5 'plsense--start-check-ready (buffer-name))))))
 
-(defun plsense--start-check-ready (fpath)
-  (when (and (not (plsense--ready-p))
-             (not (processp plsense--current-ready-check-proc)))
-    (let ((proc (start-process-shell-command "plsense-ready"
-                                             nil
-                                             (format "plsense ready \"%s\"" (expand-file-name fpath)))))
-      (set-process-filter proc 'plsense--receive-check-ready-result)
-      (process-query-on-exit-flag proc)
-      (setq plsense--current-ready-check-proc proc))))
+(defun plsense--get-ready-check-process_name (buffnm)
+  (format "plsense-ready-%s" buffnm))
+
+(defun plsense--start-check-ready (buffnm)
+  (let* ((buff (get-buffer buffnm))
+         (fpath (when (buffer-live-p buff)
+                  (buffer-file-name buff)))
+         (procnm (plsense--get-ready-check-process_name buffnm)))
+    (when (buffer-live-p buff)
+      (with-current-buffer buff
+        (if (or (not (file-exists-p fpath))
+                (file-directory-p fpath)
+                (not (plsense--active-p))
+                (plsense--ready-p))
+            (plsense--cancel-check-ready)
+          (when (not (eq (process-status procnm) 'run))
+            (plsense--trace "Start check ready of %s" buffnm)
+            (when (processp (get-process procnm))
+              (kill-process procnm))
+            (let ((proc (start-process-shell-command procnm
+                                                     nil
+                                                     (format "plsense ready \"%s\"" (expand-file-name fpath)))))
+              (set-process-filter proc 'plsense--receive-check-ready-result)
+              (process-query-on-exit-flag proc))))))))
+
+(defun plsense--cancel-check-ready ()
+  (when plsense--current-ready-check-timer
+    (cancel-timer plsense--current-ready-check-timer)
+    (setq plsense--current-ready-check-timer nil)))
 
 (defun plsense--receive-check-ready-result (proc res)
-  (when (and (plsense--active-p)
-             (not (plsense--ready-p)))
-    (setq plsense--current-file-name (buffer-file-name))
-    (setq plsense--current-ready-status (replace-regexp-in-string "\n" "" res))
-    (setq plsense--current-ready-check-proc nil)
-    (when (or (plsense--ready-p)
-              (not plsense--server-start-p))
-      (when (plsense--ready-p)
-        (plsense--info "Ready is done.")
-        (message "[PlSense] '%s' is ready." (buffer-name))
-        (sleep-for 2))
-      (when plsense--current-ready-check-timer
-        (cancel-timer plsense--current-ready-check-timer)
-        (setq plsense--current-ready-check-timer nil)))))
+  (let* ((buffnm (replace-regexp-in-string "^plsense-ready-" "" (process-name proc)))
+         (buff (get-buffer buffnm)))
+    (when (buffer-live-p buff)
+      (with-current-buffer buff
+        (setq plsense--current-file-name (buffer-file-name))
+        (setq plsense--current-ready-status (replace-regexp-in-string "\n" "" res))
+        (when (or (plsense--ready-p)
+                  (not plsense--server-start-p))
+          (when (plsense--ready-p)
+            (plsense--info "%s is ready." (buffer-name))
+            (message "[PlSense] '%s' is ready." (buffer-name))
+            (sleep-for 2))
+          (plsense--cancel-check-ready))))))
 
 
 (defadvice newline (after plsense-add-source activate)
