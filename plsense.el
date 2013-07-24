@@ -6,7 +6,7 @@
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
 ;; Version: 0.1.0
-;; Package-Requires: ((auto-complete "1.4.0") (eldoc) (log4e "0.2.0") (yaxception "0.1"))
+;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@
 ;;; Dependency:
 ;; 
 ;; - auto-complete.el ( see <https://github.com/auto-complete/auto-complete> )
-;; - eldoc.el
 ;; - yaxception.el ( see <https://github.com/aki2o/yaxception> )
 ;; - log4e.el ( see <https://github.com/aki2o/log4e> )
 
@@ -98,7 +97,6 @@
 ;; 
 ;; - Emacs ... GNU Emacs 23.3.1 (i386-mingw-nt5.1.2600) of 2011-08-15 on GNUPACK
 ;; - auto-complete.el ... Version 1.4.0
-;; - eldoc.el
 ;; - yaxception.el ... Version 0.1
 ;; - log4e.el ... Version 0.2.0
 
@@ -212,6 +210,7 @@
     (setq plsense--server-start-p nil)
     (cond ((string= ret "Done")
            (plsense--info "Stop server is done.")
+           (plsense--stop-process)
            (message "[PlSense] Stop server is done."))
           (t
            (message "[PlSense] Stop server is failed.")))
@@ -795,6 +794,10 @@
   (if (not (file-exists-p plsense--config-path))
       (error "[PlSense] Not exist '%s'. do 'plsense' on shell." (expand-file-name plsense--config-path))
     (plsense--info "Start plsense process.")
+    (when (and (processp plsense--proc)
+               (eq (process-status (process-name plsense--proc)) 'run))
+      (kill-process plsense--proc)
+      (sleep-for 1))
     (let ((proc (start-process-shell-command "plsense" nil "plsense --interactive"))
           (waiti 0))
       (set-process-filter proc 'plsense--receive-server-response)
@@ -805,6 +808,11 @@
         (incf waiti))
       (plsense--info "Finished start plsense process.")
       (setq plsense--proc proc))))
+
+(defun plsense--stop-process ()
+  (when (and (processp plsense--proc)
+             (eq (process-status (process-name plsense--proc)) 'run))
+    (process-send-string plsense--proc "exit\n")))
 
 (defun plsense--receive-server-response (proc res)
   (plsense--trace "Received server response.\n%s" res)
