@@ -172,7 +172,7 @@
 (defvar plsense--last-method-information "")
 (make-variable-buffer-local 'plsense--last-method-information)
 
-(defvar plsense--regexp-package (rx-to-string `(and bol (* space) "package" (+ space) (group (+ (any "a-zA-Z0-9:_"))))))
+(defvar plsense--regexp-package (rx-to-string `(and bol (* space) "package" (+ space) (group (+ (any "a-zA-Z0-9:_"))) (* space) ";")))
 (defvar plsense--regexp-sub (rx-to-string `(and bol (* space) "sub" (+ space) (group (+ (any "a-zA-Z0-9_"))))))
 (defvar plsense--regexp-comment (rx-to-string `(and "#" (* not-newline) "\n")))
 (defvar plsense--regexp-error (rx-to-string `(and bol "ERROR:" (+ space) (group (+ not-newline)) "\n")))
@@ -247,23 +247,14 @@
   (yaxception:$
     (yaxception:try
       (plsense--try-to-ready)
-      (when (plsense--ready-p)
-        (let* ((endpt (save-excursion
-                        (progn (skip-syntax-forward "w_")
-                               (point))))
-               (startpt (save-excursion
-                          (or (when (search-backward ";" nil t)
-                                (+ (point) 1))
-                              (point-min))))
-               (code (buffer-substring-no-properties startpt endpt))
-               (code (replace-regexp-in-string plsense--regexp-comment "" code))
-               (code (replace-regexp-in-string "\n" "" code)))
-          (when (and (plsense--set-current-file)
-                     (plsense--set-current-package)
-                     (plsense--set-current-method))
-            (let ((doc (plsense--get-server-response (concat "codehelp " code) :waitsec 2 :ignore-done t)))
-              (when (not (string= doc ""))
-                (popup-tip doc)))))))
+      (when (and (plsense--ready-p)
+                 (plsense--set-current-file)
+                 (plsense--set-current-package)
+                 (plsense--set-current-method))
+        (let* ((code (plsense--get-source-for-help))
+               (doc (plsense--get-server-response (concat "codehelp " code) :waitsec 2 :ignore-done t)))
+          (when (not (string= doc ""))
+            (popup-tip doc)))))
     (yaxception:catch 'error e
       (message "[PlSense] %s" (yaxception:get-text e))
       (plsense--error "failed popup help : %s\n%s"
@@ -276,28 +267,19 @@
   (yaxception:$
     (yaxception:try
       (plsense--try-to-ready)
-      (when (plsense--ready-p)
-        (let* ((endpt (save-excursion
-                        (progn (skip-syntax-forward "w_")
-                               (point))))
-               (startpt (save-excursion
-                          (or (when (search-backward ";" nil t)
-                                (+ (point) 1))
-                              (point-min))))
-               (code (buffer-substring-no-properties startpt endpt))
-               (code (replace-regexp-in-string plsense--regexp-comment "" code))
-               (code (replace-regexp-in-string "\n" "" code)))
-          (when (and (plsense--set-current-file)
-                     (plsense--set-current-package)
-                     (plsense--set-current-method))
-            (let* ((doc (plsense--get-server-response (concat "codehelp " code) :waitsec 4 :ignore-done t))
-                   (buff (when (not (string= doc ""))
-                           (generate-new-buffer "*plsense help*"))))
-              (when (buffer-live-p buff)
-                (with-current-buffer buff
-                  (insert doc)
-                  (goto-char (point-min)))
-                (display-buffer buff)))))))
+      (when (and (plsense--ready-p)
+                 (plsense--set-current-file)
+                 (plsense--set-current-package)
+                 (plsense--set-current-method))
+        (let* ((code (plsense--get-source-for-help))
+               (doc (plsense--get-server-response (concat "codehelp " code) :waitsec 4 :ignore-done t))
+               (buff (when (not (string= doc ""))
+                       (generate-new-buffer "*plsense help*"))))
+          (when (buffer-live-p buff)
+            (with-current-buffer buff
+              (insert doc)
+              (goto-char (point-min)))
+            (display-buffer buff)))))
     (yaxception:catch 'error e
       (message "[PlSense] %s" (yaxception:get-text e))
       (plsense--error "failed display help buffer : %s\n%s"
@@ -332,7 +314,7 @@
 (defun plsense-delete-all-cache ()
   "Delete all cache data of plsense."
   (interactive)
-  (let* ((ret (plsense--get-server-response "removeall" :waitsec 60))
+  (let* ((ret (plsense--get-server-response "removeall" :waitsec 120))
          (ret (replace-regexp-in-string "\n" "" ret)))
     (cond ((string= ret "Done")
            (plsense--info "Delete all cashe is done.")
@@ -754,6 +736,20 @@
                       (yaxception:get-text e)
                       (yaxception:get-stack-trace-string e)))))
 
+(defun plsense--get-source-for-help ()
+  (let* ((endpt (save-excursion
+                  (or (when (re-search-forward "[^a-zA-Z0-9:_]" nil t)
+                        (- (point) 1))
+                      (point-max))))
+         (startpt (save-excursion
+                    (or (when (search-backward ";" nil t)
+                          (+ (point) 1))
+                        (point-min))))
+         (code (buffer-substring-no-properties startpt endpt))
+         (code (replace-regexp-in-string plsense--regexp-comment "" code))
+         (code (replace-regexp-in-string "\n" "" code)))
+    code))
+
 
 (defun plsense--request-server (cmdstr &optional force)
   (when (or force (plsense--ready-p))
@@ -784,20 +780,26 @@
              (plsense--trace "Got response from server.")
              (replace-match "" nil nil plsense--server-response))))))
 
+
 (defun plsense--get-process ()
   (or (and (processp plsense--proc)
            (eq (process-status (process-name plsense--proc)) 'run)
            plsense--proc)
       (plsense--start-process)))
 
+(defun plsense--exist-process ()
+  (and (processp plsense--proc)
+       (process-status (process-name plsense--proc))
+       t))
+
 (defun plsense--start-process ()
   (if (not (file-exists-p plsense--config-path))
       (error "[PlSense] Not exist '%s'. do 'plsense' on shell." (expand-file-name plsense--config-path))
     (plsense--info "Start plsense process.")
-    (when (and (processp plsense--proc)
-               (eq (process-status (process-name plsense--proc)) 'run))
+    (when (plsense--exist-process)
       (kill-process plsense--proc)
       (sleep-for 1))
+    (setq plsense--server-response "")
     (let ((proc (start-process-shell-command "plsense" nil "plsense --interactive"))
           (waiti 0))
       (set-process-filter proc 'plsense--receive-server-response)
@@ -810,8 +812,7 @@
       (setq plsense--proc proc))))
 
 (defun plsense--stop-process ()
-  (when (and (processp plsense--proc)
-             (eq (process-status (process-name plsense--proc)) 'run))
+  (when (plsense--exist-process)
     (process-send-string plsense--proc "exit\n")))
 
 (defun plsense--receive-server-response (proc res)
@@ -847,6 +848,7 @@
          (message "[PlSense] %s" res)
          (sleep-for 1))))
 
+
 (defun plsense--run-ready-check-timer ()
   (let ((fpath (buffer-file-name))
         (procnm (plsense--get-ready-check-process_name (buffer-name))))
@@ -855,7 +857,7 @@
                (plsense--active-p)
                (not (plsense--ready-p)))
       (plsense--debug "Set timer to check ready for %s" fpath)
-      (when (processp (get-process procnm))
+      (when (process-status procnm)
         (kill-process procnm))
       (plsense--cancel-check-ready)
       (setq plsense--current-ready-check-timer
@@ -878,7 +880,7 @@
             (plsense--cancel-check-ready)
           (when (not (eq (process-status procnm) 'run))
             (plsense--trace "Start check ready of %s" buffnm)
-            (when (processp (get-process procnm))
+            (when (process-status procnm)
               (kill-process procnm))
             (let ((proc (start-process-shell-command procnm
                                                      nil
