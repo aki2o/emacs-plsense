@@ -133,6 +133,81 @@ Usage
 
 #### Kind of server
 
+* Main Server ... provide completion/help.
+* Work Server ... manage task for searching library and analyzing File/Module.
+* Resolve Server ... gather result of analyzing File/Module.
+
+#### Status of server
+
+* Running ... can accept client.
+* Busy ... can not accept client.
+* Not Running ... not yet started.
+
+#### Task of server
+
+* build _File/Module_ ... Analyzing the File/Module.
+* find _String_ ... Searching library about the String.
+
+### Active/Inactive provision of completion/help
+
+The above command in 'Start/Stop of server' section, double as a switching active/inactive.  
+If you have executed `plsense-server-start`, provision of completion/help is active when open buffer.  
+But, not start provision of completion/help until finish analyzing the buffer.  
+When start provision of completion/help, show `... is ready.`.
+
+* `plsense-buffer-is-ready` ... show status about analyzing current buffer.
+* `plsense-reopen-current-buffer` ... restart analyzing current buffer.
+
+**Note:** Not activate automatically on the buffer that opened before executing `plsense-server-start`.  
+**Note:** In the case, execute `plsense-reopen-current-buffer`.  
+
+#### Status about analyzing buffer
+
+* Yes ... finished.
+* Now Loading ... do analyzing now.
+* No ... not start analyzing.
+* Not Found ... PlSense server can't identify the buffer file.
+
+**Note:** Maybe show 'No' or 'Not Found' despite the finish of analyzing.  
+**Note:** In the case, retry a few times. If remain showing 'Not Found', seeing 'Sync server' section below.  
+
+### Sync server
+
+For a optimized completion/help, it's required that synchronization of context between Emacs and PlSense server.  
+Normally, it's finished by this extension automatically.  
+But, it maybe happen that synchronization is failed by some reason and it isn't recovered automatically.  
+If not show completion/help and show error message continuously, execute the following command.
+
+* `plsense-update-location` ... inform Plsense server of current context forcibly.
+
+**Note:** If not recovered by the above command, restart PlSense server.  
+
+### Refresh server
+
+The result of analyzing is gathered on PlSense server with edit buffer on Emacs.  
+Then, the following maybe happen by running PlSense server over a long time.  
+
+* Increase of quantity of expending memory by PlSense server.
+* If you edit same point in many times, the result of completion/help differ from expectation.
+
+In the case, execute the following command.
+
+* `plsense-server-refresh` ... initialize PlSense server and start analyzing the newest source code.
+
+**Note:** Restart PlSense server is also OK. But if running task exists, the result is lost.
+
+
+Restriction
+===========
+
+### Identify context
+
+PlSense identify context by analyzing a source code of Perl.  
+But, can't identify the all context because Perl has a lot of grammar.  
+It maybe happen that analyzing is failed and completion/help is not provided.  
+For more information, see https://github.com/aki2o/plsense/blob/master/README-ja.md
+
+### Content of help
 
 
 

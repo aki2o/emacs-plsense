@@ -114,14 +114,14 @@ Emacs以外に必要なもの
 
 ### バージョン確認
 
-* plsense-version ... PlSenseのバージョン情報を表示する。
+* `plsense-version` ... PlSenseのバージョン情報を表示する。
 
 ※ 上記を実行することにより、PlSenseのインストール確認が行えます。
 
 ### 起動/停止
 
-* plsense-server-start ... PlSenseのサーバプロセスを起動します。
-* plsense-server-stop ... PlSenseのサーバプロセスを停止します。
+* `plsense-server-start` ... PlSenseのサーバプロセスを起動します。
+* `plsense-server-stop` ... PlSenseのサーバプロセスを停止します。
 
 ※ 事前にPlSenseの設定が完了している必要があります。  
 ※ 既にPlSenseサーバプロセスが存在する場合でも、Emacs上で`plsense-server-start`は実行する必要があります。  
@@ -131,8 +131,8 @@ Emacs以外に必要なもの
 
 ### サーバ情報
 
-* plsense-server-status ... サーバの状態を表示する。
-* plsense-server-task ... サーバが処理しているタスクを表示する。
+* `plsense-server-status` ... サーバの状態を表示する。
+* `plsense-server-task` ... サーバが処理しているタスクを表示する。
 
 #### サーバの種類
 
@@ -150,8 +150,8 @@ PlSenseサーバは、その用途毎に3つのプロセスに分かれていま
 
 #### サーバのタスク
 
-* build モジュール名/ファイル名 ... 該当モジュール/ファイルのソース解析中。
-* find 文字列 ... インストール済みやプロジェクト固有のライブラリモジュール検索中。
+* build _モジュール名/ファイル名_ ... 該当モジュール/ファイルのソース解析中。
+* find _文字列_ ... インストール済みやプロジェクト固有のライブラリモジュール検索中。
 
 ### 補完/ヘルプ表示の有効/無効
 
@@ -160,8 +160,11 @@ PlSenseサーバは、その用途毎に3つのプロセスに分かれていま
 しかし、バッファのソース解析が完了するまでは、補完/ヘルプ表示はできません。  
 解析が完了し、補完/ヘルプ表示が可能になると、`... is ready.`と表示されます。
 
-* plsense-buffer-is-ready ... カレントバッファの解析状況を表示する。
-* plsense-reopen-current-buffer ... カレントバッファの解析を再度開始する。
+* `plsense-buffer-is-ready` ... カレントバッファの解析状況を表示する。
+* `plsense-reopen-current-buffer` ... カレントバッファの解析を再度開始する。
+
+※ `plsense-server-start`実行前に開いていたバッファでは自動で有効になりません。  
+※ その場合は、`plsense-reopen-current-buffer`を実行して下さい。  
 
 #### バッファ解析状況
 
@@ -181,7 +184,7 @@ Emacs上のコンテキストとPlSenseサーバに設定されたコンテキ�
 同期に失敗し、それが自動では回復できない状態に陥る場合があります。  
 もし、補完/ヘルプ表示ができなくなり、エラーメッセージが頻発するようなことがあれば、以下を実行してみて下さい。
 
-* plsense-update-location ... 現在のコンテキストをPlSenseサーバに通知し同期する。
+* `plsense-update-location` ... 現在のコンテキストをPlSenseサーバに通知し同期する。
 
 ※ 上記でも改善しない場合は、PlSenseサーバを再起動して下さい。
 
@@ -195,7 +198,7 @@ Emacs上のコンテキストとPlSenseサーバに設定されたコンテキ�
 
 その場合には、以下を実行して下さい。
 
-* plsense-server-refresh ... PlSenseサーバを初期化し、最新のソースを解析する。
+* `plsense-server-refresh` ... PlSenseサーバを初期化し、最新のソースを解析する。
 
 ※ PlSenseサーバの再起動でも同様の効果が得られますが、実行中のタスクがあった場合、その結果が消失してしまいます。
 
