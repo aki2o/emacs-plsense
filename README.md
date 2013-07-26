@@ -111,14 +111,30 @@ Usage
 
 ### Show version
 
-* plsense-version ... show version of PlSense.
+* `plsense-version` ... show version of PlSense.
 
-**Note:** double as a verification of install
+**Note:** Double as a verification of install.
 
 ### Start/Stop server
 
-* plsense-server-start ... start process of PlSense server.
-* plsense-server-stop ... stop process of PlSense server.
+* `plsense-server-start` ... start process of PlSense server.
+* `plsense-server-stop` ... stop process of PlSense server.
+
+**Note:** You must finish configuration of PlSense on ahead.  
+**Note:** You must do `plsense-server-start` on Emacs regardless of whether PlSense server process exist.  
+**Note:** Executing the above command redundantly is OK.  
+**Note:** Maybe show `... is failed` despite the success of the above command along of timeout.  
+**Note:** In the case, verify status of PlSense server seeing 'Information of server' section below.  
+
+### Information of server
+
+* `plsense-server-status` ... show status of PlSense server.
+* `plsense-server-task` ... show the running tasks on PlSense server.
+
+#### Kind of server
+
+
+
 
 
 Tested On
