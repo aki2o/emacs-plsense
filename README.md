@@ -1,3 +1,5 @@
+[Japanese](https://github.com/aki2o/emacs-plsense/blob/master/README-ja.md)
+
 What's this?
 ============
 
@@ -205,11 +207,33 @@ Restriction
 PlSense identify context by analyzing a source code of Perl.  
 But, can't identify the all context because Perl has a lot of grammar.  
 It maybe happen that analyzing is failed and completion/help is not provided.  
-For more information, see https://github.com/aki2o/plsense/blob/master/README-ja.md
+For detail, see https://github.com/aki2o/plsense/blob/master/README.md
 
 ### Content of help
 
+Picking up the Variable/Method help from PerlDoc maybe failed.  
+In the case, show the help of module that the Variable/Method belong to.
 
+### Optimize completion/help
+
+Analyzing is started from current buffer recursively in sequence.  
+It like the following.  
+
+CurrentBuffer A => A's UseModule B => B's UseModule C ...
+
+Provision of completion/help is started when finished analyze current buffer.  
+But, analyzing continue in the background like the above.  
+It means that a few minutes is required for the result of completion/help is optimized.  
+It apply when you open/edit/save buffer.
+
+The result of analyzing is saved and used until the file is changed.  
+So, If finish the all analyzing, provision of a optimized completion/help is started soon.  
+
+About the time required for the all analyzing is finished,  
+see https://github.com/aki2o/plsense/blob/master/README.md
+
+I guess that the Emacs action become sluggish while a many tasks is running.  
+If you notice it, you can show the task by `plsense-server-task`.
 
 
 Tested On
