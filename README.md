@@ -161,7 +161,7 @@ When start provision of completion/help, show `... is ready.`.
 * `plsense-reopen-current-buffer` ... restart analyzing current buffer.
 
 **Note:** Not activate automatically on the buffer that opened before executing `plsense-server-start`.  
-**Note:** In the case, execute `plsense-reopen-current-buffer`.  
+**Note:** In the case, execute `plsense-reopen-current-buffer` for activate.  
 **Note:** Not activate automatically if the buffer file is not exists.  
 **Note:** When execute `find-file`, save the buffer.  
 
@@ -173,7 +173,8 @@ When start provision of completion/help, show `... is ready.`.
 * Not Found ... PlSense server can't identify the buffer file.
 
 **Note:** Maybe show 'No' or 'Not Found' despite the finish of analyzing.  
-**Note:** In the case, retry a few times. If remain showing 'Not Found', seeing 'Sync server' section below.  
+**Note:** If retry a few times but remain showing 'No', the buffer maybe not activate.  
+**Note:** If retry a few times but remain showing 'Not Found', seeing 'Sync server' section below.  
 
 ### Sync server
 
