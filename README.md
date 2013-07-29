@@ -162,6 +162,8 @@ When start provision of completion/help, show `... is ready.`.
 
 **Note:** Not activate automatically on the buffer that opened before executing `plsense-server-start`.  
 **Note:** In the case, execute `plsense-reopen-current-buffer`.  
+**Note:** Not activate automatically if the buffer file is not exists.  
+**Note:** When execute `find-file`, save the buffer.  
 
 #### Status about analyzing buffer
 
