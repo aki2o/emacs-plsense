@@ -238,6 +238,26 @@ see https://github.com/aki2o/plsense/blob/master/README.md
 I guess that the Emacs action become sluggish while a many tasks is running.  
 If you notice it, you can show the task by `plsense-server-task`.
 
+### Reflect the result of editing buffer
+
+I think the best way is that analyzing is done for latest content of buffer when user require completion/help.  
+But, the way is high cost.  
+So, do analyzing at the other timing for high-performance.  
+At present, the timing is when the following command is executed.
+
+* save-buffer
+* newline
+* newline-and-indent
+
+Analyzing is not done without executing the above command.  
+And, analyzing is simplified at the timing other than save-buffer.  
+It means that the following item is not reflect at these timing.
+
+* imported method/variable by use statement
+
+I hope you execute save-buffer frequency.  
+For example, the way is using auto-save-buffers.
+
 
 Tested On
 =========
