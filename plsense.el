@@ -175,7 +175,7 @@
 (defvar plsense--regexp-package (rx-to-string `(and bol (* space) "package" (+ space) (group (+ (any "a-zA-Z0-9:_"))) (* space) ";")))
 (defvar plsense--regexp-sub (rx-to-string `(and bol (* space) "sub" (+ space) (group (+ (any "a-zA-Z0-9_"))))))
 (defvar plsense--regexp-comment (rx-to-string `(and "#" (* not-newline) "\n")))
-(defvar plsense--regexp-error (rx-to-string `(and bol "ERROR:" (+ space) (group (+ not-newline)) "\n")))
+(defvar plsense--regexp-error (rx-to-string `(and bol (or "ERROR" "FATAL") ":" (+ space) (group (+ not-newline)) "\n")))
 
 
 (defun plsense-version ()
