@@ -126,7 +126,7 @@ Usage
 **Note:** You must do `plsense-server-start` on Emacs regardless of whether PlSense server process exist.  
 **Note:** Executing the above command redundantly is OK.  
 **Note:** Maybe show `... is failed` despite the success of the above command along of timeout.  
-**Note:** In the case, verify status of PlSense server seeing 'Information of server' section below.  
+**Note:** In the case, verify status of PlSense server by seeing 'Information of server' section below.  
 
 ### Information of server
 
@@ -172,9 +172,10 @@ When start provision of completion/help, show `... is ready.`.
 * No ... not start analyzing.
 * Not Found ... PlSense server can't identify the buffer file.
 
-**Note:** Maybe show 'No' or 'Not Found' despite the finish of analyzing.  
-**Note:** If retry a few times but remain showing 'No', the buffer maybe not activate.  
-**Note:** If retry a few times but remain showing 'Not Found', seeing 'Sync server' section below.  
+**Note:** If status is 'No', the buffer maybe not activate. execute `plsense-reopen-current-buffer`.  
+**Note:** If status is 'Not Found', check syntax error. PlSense can not analyze when syntax error.  
+**Note:** If status is 'Not Found' other than above case, see 'Sync server' section below.  
+**Note:** Otherwise, status maybe 'No' or 'Not Found' despite the finish of analyzing.  
 
 ### Sync server
 
@@ -205,17 +206,15 @@ In the case, execute the following command.
 Restriction
 ===========
 
-### Identify context
+### Syntax error
 
-PlSense identify context by analyzing a source code of Perl.  
-But, can't identify the all context because Perl has a lot of grammar.  
-It maybe happen that analyzing is failed and completion/help is not provided.  
-For detail, see https://github.com/aki2o/plsense/blob/master/README.md
+PlSense can not analyze the file that has syntax error.  
+It means the following.
 
-### Content of help
+* The buffer is not active when open the file that has syntax error.
+* The result of completion/help is not updated when save the file that has syntax error.
 
-Picking up the Variable/Method help from PerlDoc maybe failed.  
-In the case, show the help of module that the Variable/Method belong to.
+**Note:** For checking syntax error, execute `perl -c /path/to/file` on shell.
 
 ### Optimize completion/help
 
@@ -259,6 +258,18 @@ It means that the following item is not reflect at these timing.
 
 I hope you execute save-buffer frequency.  
 For example, the way is using auto-save-buffers.
+
+### Identify context
+
+PlSense identify context by analyzing a source code of Perl.  
+But, can't identify the all context because Perl has a lot of grammar.  
+It maybe happen that analyzing is failed and completion/help is not provided.  
+For detail, see https://github.com/aki2o/plsense/blob/master/README.md
+
+### Content of help
+
+Picking up the Variable/Method help from PerlDoc maybe failed.  
+In the case, show the help of module that the Variable/Method belong to.
 
 
 Tested On
