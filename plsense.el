@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.1.1
+;; Version: 0.1.2
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -832,7 +832,7 @@
                       (yaxception:get-text e)
                       (yaxception:get-stack-trace-string e)))))
 
-(defun plsense--handle-err-response (res)
+(defun* plsense--handle-err-response (res &key inform-compile-error)
   (cond ((string-match "\\`Not yet exist \\[[a-zA-Z0-9:_]+\\] of \\[\\(.+\\)\\]" res)
          (message "[PlSense] Please exec 'plsense-reopen-current-buffer' on '%s'" (match-string-no-properties 1 res))
          (sleep-for 1))
@@ -843,6 +843,9 @@
          (message "[PlSense] Please exec 'plsense-reopen-current-buffer' on '%s'" (buffer-name))
          (sleep-for 1))
         ((string-match "\\`Check the module status" res)
+         nil)
+        ((and (string-match "\\`Failed compile" res)
+              (not inform-compile-error))
          nil)
         (t
          (message "[PlSense] %s" res)
@@ -899,7 +902,11 @@
     (when (buffer-live-p buff)
       (with-current-buffer buff
         (setq plsense--current-file-name (buffer-file-name))
-        (setq plsense--current-ready-status (replace-regexp-in-string "\n" "" res))
+        (when (stringp res)
+          (cond ((string-match plsense--regexp-error res)
+                 (plsense--handle-err-response (match-string-no-properties 1 res)))
+                (t
+                 (setq plsense--current-ready-status (replace-regexp-in-string "\n" "" res)))))
         (when (or (plsense--ready-p)
                   (not plsense--server-start-p))
           (when (plsense--ready-p)
