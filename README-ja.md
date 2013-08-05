@@ -255,6 +255,8 @@ https://github.com/aki2o/plsense/blob/master/README-ja.md
 * save-buffer
 * newline
 * newline-and-indent
+* yank
+* yas/commit-snippet
 
 上記を行わないと、バッファの編集内容は補完/ヘルプ表示に反映されません。  
 

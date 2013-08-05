@@ -248,6 +248,8 @@ At present, the timing is when the following command is executed.
 * save-buffer
 * newline
 * newline-and-indent
+* yank
+* yas/commit-snippet
 
 Analyzing is not done without executing the above command.  
 And, analyzing is simplified at the timing other than save-buffer.  
