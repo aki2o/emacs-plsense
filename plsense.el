@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -916,6 +916,15 @@
 (defadvice newline-and-indent (after plsense-add-source activate)
   (when (plsense--active-p)
     (plsense--add-pointed-source)))
+
+(defadvice yank (after plsense-add-source activate)
+  (when (plsense--active-p)
+    (plsense--add-pointed-source)))
+
+(when (featurep 'yasnippet)
+  (defadvice yas/commit-snippet (after plsense-add-source activate)
+    (when (plsense--active-p)
+      (plsense--add-pointed-source))))
 
 
 (provide 'plsense)
