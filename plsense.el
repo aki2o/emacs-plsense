@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -353,7 +353,7 @@
       (add-to-list 'ac-sources 'ac-source-plsense-word)
       (add-to-list 'ac-modes 'perl-mode)
       (add-to-list 'ac-modes 'cperl-mode)
-      (auto-complete-mode)
+      (auto-complete-mode t)
       (set (make-local-variable 'eldoc-documentation-function) 'plsense--echo-method-usage)
       (turn-on-eldoc-mode)
       ;; (when (not plsense--server-start-p)
