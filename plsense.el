@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.1.3
+;; Version: 0.1.4
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -771,7 +771,7 @@
       (plsense--trace "Start wait response from server.")
       (while (and (< waiti maxwaiti)
                   (not (string-match "\n?>\\s-\\'" plsense--server-response)))
-        (accept-process-output proc 0 200)
+        (accept-process-output proc 0.2 nil t)
         (incf waiti))
       (cond ((not (< waiti maxwaiti))
              (plsense--warn "Timeout get response of %s" cmdstr)
@@ -806,7 +806,7 @@
       (process-query-on-exit-flag proc)
       (while (and (< waiti 50)
                   (not (string-match "\n?>\\s-\\'" plsense--server-response)))
-        (accept-process-output proc 0 200)
+        (accept-process-output proc 0.2 nil t)
         (incf waiti))
       (plsense--info "Finished start plsense process.")
       (setq plsense--proc proc))))
