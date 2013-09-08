@@ -43,6 +43,7 @@
 ;; And put the following lines in your .emacs or site-start.el file.
 ;; 
 ;; (require 'plsense)
+;; (plsense-enable)
 
 ;;; Configuration:
 ;; 
@@ -366,15 +367,15 @@
                       (yaxception:get-text e)
                       (yaxception:get-stack-trace-string e)))))
 
-(add-hook 'cperl-mode-hook 'plsense-setup t)
-(add-hook 'perl-mode-hook 'plsense-setup t)
-
 (defun plsense-update ()
   (when (plsense--active-p)
     (plsense--update-buffer (current-buffer))))
 
-(add-hook 'after-save-hook 'plsense-update t)
-
+;;;###autoload
+(defun plsense-enable ()
+  (add-hook 'cperl-mode-hook 'plsense-setup t)
+  (add-hook 'perl-mode-hook 'plsense-setup t)
+  (add-hook 'after-save-hook 'plsense-update t))
 
 (defvar ac-source-plsense-include
   '((candidates . plsense--get-ac-candidates)
