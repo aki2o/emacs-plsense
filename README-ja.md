@@ -59,38 +59,28 @@ Emacs以外に必要なもの
 インストール
 ============
 
-インストールには、el-getを使うのを推奨します。  
-手動やauto-install.elでも良いですが、下記の依存拡張もそれぞれインストールする必要があります。
+### package.elを使う場合
+
+2013/09/10 melpaリポジトリからインストール可能  
 
 ### el-get.elを使う場合
 
-2013/07/24  と言いつつ、まだ利用できません。
-
-以下のように、el-get-sourcesに設定を追加すれば、el-getでインストールできるようになります。
-
-    (setq el-get-sources
-          '(
-            (:name log4e
-                   :website "https://github.com/aki2o/log4e"
-                   :description "provide logging framework for elisp."
-                   :type github
-                   :pkgname "aki2o/log4e")
-            (:name yaxception
-                   :website "https://github.com/aki2o/yaxception"
-                   :description "provide framework about exception like Java for elisp."
-                   :type github
-                   :pkgname "aki2o/yaxception")
-            (:name plsense
-                   :website "https://github.com/aki2o/emacs-plsense"
-                   :description "provide interface for PlSense that is a development tool for Perl."
-                   :type github
-                   :pkgname "aki2o/emacs-plsense"
-                   :depends (auto-complete log4e yaxception))
-            ))
+2013/07/24 と言いつつ、まだ利用できません。  
+2013/09/08 利用可能。ただし、masterブランチのみです。  
 
 ### auto-install.elを使う場合
 
-    (auto-install-from-url "https://raw.github.com/aki2o/emacs-plsense/master/plsense.el")
+```lisp
+(auto-install-from-url "https://raw.github.com/aki2o/emacs-plsense/master/plsense.el")
+```
+
+※ 下記の依存拡張もそれぞれインストールする必要があります。  
+
+### 手動の場合
+
+plsense.elをダウンロードし、load-pathの通った場所に配置して下さい。
+
+※ 下記の依存拡張もそれぞれインストールする必要があります。  
 
 ### 依存拡張
 

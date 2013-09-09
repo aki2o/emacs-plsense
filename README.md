@@ -56,40 +56,28 @@ Requirement
 Install
 =======
 
-I recommend using el-get for installing this extension.  
-Downloading manually or using auto-install.el are OK,
-but installing each the following dependency is required in this case.
+### If use package.el
+
+2013/09/10 It's available by using melpa.  
 
 ### If use el-get.el
 
 2013/07/26 Not yet available.  
+2013/09/08 It's available. But, master branch only.  
 
-If you set `el-get-sources` in your .emacs or site-start.el file,  
-You can available el-get to install this extension.
-
-    (setq el-get-sources
-          '(
-            (:name log4e
-                   :website "https://github.com/aki2o/log4e"
-                   :description "provide logging framework for elisp."
-                   :type github
-                   :pkgname "aki2o/log4e")
-            (:name yaxception
-                   :website "https://github.com/aki2o/yaxception"
-                   :description "provide framework about exception like Java for elisp."
-                   :type github
-                   :pkgname "aki2o/yaxception")
-            (:name plsense
-                   :website "https://github.com/aki2o/emacs-plsense"
-                   :description "provide interface for PlSense that is a development tool for Perl."
-                   :type github
-                   :pkgname "aki2o/emacs-plsense"
-                   :depends (auto-complete log4e yaxception))
-            ))
-    
 ### If use auto-install.el
 
-    (auto-install-from-url "https://raw.github.com/aki2o/emacs-plsense/master/plsense.el")
+```lisp
+(auto-install-from-url "https://raw.github.com/aki2o/emacs-plsense/master/plsense.el")
+```
+
+**Note:** Installing each the following dependency is required in this case.
+
+### Manually
+
+Download plsense.el and put on your load-path.
+
+**Note:** Installing each the following dependency is required in this case.
 
 ### Dependency
 
