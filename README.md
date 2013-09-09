@@ -101,11 +101,27 @@ You can available el-get to install this extension.
 Configuration
 =============
 
-    (require 'plsense)
-    ;; Popup help about pointed something
-    (setq plsense-popup-help-key "C-:")
-    ;; Display help buffer about pointed something
-    (setq plsense-display-help-buffer-key "M-:")
+```lisp
+(require 'plsense)
+
+;; Popup help about pointed something
+(setq plsense-popup-help-key "C-:")
+
+;; Display help buffer about pointed something
+(setq plsense-display-help-buffer-key "M-:")
+
+;; If you want to start server process automatically,
+(setq plsense-server-start-automatically-p t)
+
+;; If there is the mode, which you want to enable plsense,
+(add-to-list 'plsense-enable-modes 'hoge-mode)
+
+;; If there is the key, which you want to start completion of auto-complete.el,
+(add-to-list 'plsense-ac-trigger-command-keys "=")
+
+;; Do setting recommemded configuration
+(plsense-config-default)
+```
 
 
 Usage
@@ -127,6 +143,7 @@ Usage
 **Note:** Executing the above command redundantly is OK.  
 **Note:** Maybe show `... is failed` despite the success of the above command along of timeout.  
 **Note:** In the case, verify status of PlSense server by seeing 'Information of server' section below.  
+**Note:** You can do `plsense-server-start` automatically by configuration.  
 
 ### Information of server
 
@@ -164,6 +181,7 @@ When start provision of completion/help, show `... is ready.`.
 **Note:** In the case, execute `plsense-reopen-current-buffer` for activate.  
 **Note:** Not activate automatically if the buffer file is not exists.  
 **Note:** When execute `find-file`, save the buffer.  
+**Note:** Not activate on the buffer of the mode not included in `plsense-enable-modes`.  
 
 #### Status about analyzing buffer
 
@@ -242,7 +260,7 @@ If you notice it, you can show the task by `plsense-server-task`.
 I think the best way is that analyzing is done for latest content of buffer when user require completion/help.  
 But, the way is high cost.  
 So, do analyzing at the other timing for high-performance.  
-At present, the timing is when the following command is executed.
+If you use `plsense-config-default`, the timing is when the following command is executed.
 
 * save-buffer
 * newline
@@ -250,14 +268,17 @@ At present, the timing is when the following command is executed.
 * yank
 * yas/commit-snippet
 
-Analyzing is not done without executing the above command.  
-And, analyzing is simplified at the timing other than save-buffer.  
-It means that the following item is not reflect at these timing.
+**Note:** There are two type of Analyzing, simplified/complete.  
+**Note:** In the above case, Analyzing is simplified at the timing other than save-buffer.  
 
-* imported method/variable by use statement
+#### About analyzing in editing buffer
 
-I hope you execute save-buffer frequency.  
-For example, the way is using auto-save-buffers.
+* A simplified analyzing is low cost. But the following item is not reflect.
+    * imported method/variable by use statement
+* You can do a complete analyzing by executing `plsense-update-current-buffer`.
+* You can do a simplified analyzing by executing `plsense--add-pointed-source`.
+* You can add the timing of a simplified analyzing by using `plsense-server-sync-trigger-ize`.
+* If you want to change the analyzing timing, see help of them and definition of `plsense-config-default`.
 
 ### Identify context
 

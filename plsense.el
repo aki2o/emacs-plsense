@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.1.4
+;; Version: 0.2.0
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,18 @@
 ;; ;; Key Binding
 ;; (setq plsense-popup-help-key "C-:")
 ;; (setq plsense-display-help-buffer-key "M-:")
+;; 
+;; ;; If you want to start server process automatically,
+;; (setq plsense-server-start-automatically-p t)
+;; 
+;; ;; If there is the mode, which you want to enable plsense,
+;; (add-to-list 'plsense-enable-modes 'hoge-mode)
+;; 
+;; ;; If there is the key, which you want to start completion of auto-complete.el,
+;; (add-to-list 'plsense-ac-trigger-command-keys "=")
+;; 
+;; ;; Do setting recommemded configuration
+;; (plsense-config-default)
 
 ;;; Customization:
 ;; 
@@ -57,6 +69,12 @@
 ;; Keystroke for popup help about anything at point.
 ;; `plsense-display-help-buffer-key'
 ;; Keystroke for display help buffer about anything at point.
+;; `plsense-enable-modes'
+;; Major modes plsense is enabled on.
+;; `plsense-server-start-automatically-p'
+;; Whether start server process when execute `plsense-setup-current-buffer'.
+;; `plsense-ac-trigger-command-keys'
+;; Keystrokes for doing `ac-start' with self insert.
 ;; 
 ;;  *** END auto-documentation
 
@@ -89,6 +107,16 @@
 ;; Update location of plsense process.
 ;; `plsense-delete-all-cache'
 ;; Delete all cache data of plsense.
+;; `plsense-update-current-buffer'
+;; Request updating about contents of current buffer to server process.
+;; `plsense-setup-current-buffer'
+;; Do setup for using plsense in current buffer.
+;; 
+;;  *** END auto-documentation
+;; 
+;; [EVAL] (autodoc-document-lisp-buffer :type 'macro :prefix "plsense-[^\-]" :docstring t)
+;; `plsense-server-sync-trigger-ize'
+;; Define advice to FUNC for informing changes of current buffer to server.
 ;; 
 ;;  *** END auto-documentation
 ;; [Note] Functions and variables other than listed above, Those specifications may be changed without notice.
@@ -125,6 +153,21 @@
 (defcustom plsense-display-help-buffer-key nil
   "Keystroke for display help buffer about anything at point."
   :type 'string
+  :group 'plsense)
+
+(defcustom plsense-enable-modes '(perl-mode cperl-mode)
+  "Major modes plsense is enabled on."
+  :type '(repeat symbol)
+  :group 'plsense)
+
+(defcustom plsense-server-start-automatically-p nil
+  "Whether start server process when execute `plsense-setup-current-buffer'."
+  :type 'boolean
+  :group 'plsense)
+
+(defcustom plsense-ac-trigger-command-keys '("SPC" ">" "$" "@" "%" "&" "{" "[" "(" "/")
+  "Keystrokes for doing `ac-start' with self insert."
+  :type '(repeat string)
   :group 'plsense)
 
 
@@ -178,16 +221,19 @@
 (defvar plsense--regexp-error (rx-to-string `(and bol (or "ERROR" "FATAL") ":" (+ space) (group (+ not-newline)) "\n")))
 
 
+;;;###autoload
 (defun plsense-version ()
   "Show PlSense Version."
   (interactive)
   (message (shell-command-to-string "plsense --version")))
 
+;;;###autoload
 (defun plsense-server-status ()
   "Show status of server process."
   (interactive)
   (message (plsense--get-server-response "serverstatus" :waitsec 30 :force t :ignore-done t)))
 
+;;;###autoload
 (defun plsense-server-start ()
   "Start server process."
   (interactive)
@@ -202,6 +248,7 @@
            (message "[PlSense] Start server is failed.")))
     (sleep-for 1)))
 
+;;;###autoload
 (defun plsense-server-stop ()
   "Stop server process."
   (interactive)
@@ -216,6 +263,7 @@
            (message "[PlSense] Stop server is failed.")))
     (sleep-for 1)))
 
+;;;###autoload
 (defun plsense-server-refresh ()
   "Refresh server process."
   (interactive)
@@ -228,6 +276,7 @@
            (message "[PlSense] Refresh is failed.")))
     (sleep-for 1)))
 
+;;;###autoload
 (defun plsense-server-task ()
   "Show information of active task on server process."
   (interactive)
@@ -236,11 +285,13 @@
         (message "[PlSense] no task now.")
       (message ret))))
 
+;;;###autoload
 (defun plsense-buffer-is-ready ()
   "Show whether or not plsense is available on current buffer."
   (interactive)
   (message plsense--current-ready-status))
 
+;;;###autoload
 (defun plsense-popup-help ()
   "Popup help about anything for current context."
   (interactive)
@@ -261,6 +312,7 @@
                       (yaxception:get-text e)
                       (yaxception:get-stack-trace-string e)))))
 
+;;;###autoload
 (defun plsense-display-help-buffer ()
   "Display help buffer about anything for current context."
   (interactive)
@@ -286,6 +338,7 @@
                       (yaxception:get-text e)
                       (yaxception:get-stack-trace-string e)))))
 
+;;;###autoload
 (defun plsense-delete-help-buffer ()
   "Delete help buffers."
   (interactive)
@@ -294,12 +347,14 @@
                 (string-match "\\`\\*plsense help\\*" (buffer-name buff)))
         do (kill-buffer buff)))
 
+;;;###autoload
 (defun plsense-reopen-current-buffer ()
   "Re-open current buffer."
   (interactive)
   (setq plsense--current-ready-status "No")
   (plsense--open-buffer (current-buffer)))
 
+;;;###autoload
 (defun plsense-update-location ()
   "Update location of plsense process."
   (interactive)
@@ -311,6 +366,7 @@
                     "failed"))))
     (message "[PlSense] Update location is %s." ret)))
 
+;;;###autoload
 (defun plsense-delete-all-cache ()
   "Delete all cache data of plsense."
   (interactive)
@@ -323,57 +379,85 @@
            (message "[PlSense] Delete all cache is failed.")))
     (sleep-for 1)))
 
-(defun plsense-setup ()
+;;;###autoload
+(defun plsense-update-current-buffer ()
+  "Request updating about contents of current buffer to server process."
+  (interactive)
+  (when (plsense--active-p)
+    (plsense--update-buffer (current-buffer))))
+
+;;;###autoload
+(defun plsense-setup-current-buffer ()
+  "Do setup for using plsense in current buffer."
+  (interactive)
   (yaxception:$
     (yaxception:try
-      (local-set-key (kbd "SPC") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd ">") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "$") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "@") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "%") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "&") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "{") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "[") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "(") 'plsense--insert-with-ac-trigger-command)
-      (local-set-key (kbd "/") 'plsense--insert-with-ac-trigger-command)
-      (when (and (stringp plsense-popup-help-key)
-                 (not (string= plsense-popup-help-key "")))
-        (local-set-key (read-kbd-macro plsense-popup-help-key) 'plsense-popup-help))
-      (when (and (stringp plsense-display-help-buffer-key)
-                 (not (string= plsense-display-help-buffer-key "")))
-        (local-set-key (read-kbd-macro plsense-display-help-buffer-key) 'plsense-display-help-buffer))
-      (add-to-list 'ac-sources 'ac-source-plsense-include)
-      (add-to-list 'ac-sources 'ac-source-plsense-variable)
-      (add-to-list 'ac-sources 'ac-source-plsense-sub)
-      (add-to-list 'ac-sources 'ac-source-plsense-arrow)
-      (add-to-list 'ac-sources 'ac-source-plsense-hash-member)
-      (add-to-list 'ac-sources 'ac-source-plsense-constructor)
-      (add-to-list 'ac-sources 'ac-source-plsense-quoted)
-      (add-to-list 'ac-sources 'ac-source-plsense-list-element)
-      (add-to-list 'ac-sources 'ac-source-plsense-word)
-      (add-to-list 'ac-modes 'perl-mode)
-      (add-to-list 'ac-modes 'cperl-mode)
-      (auto-complete-mode t)
-      (set (make-local-variable 'eldoc-documentation-function) 'plsense--echo-method-usage)
-      (turn-on-eldoc-mode)
-      ;; (when (not plsense--server-start-p)
-      ;;   (plsense-server-start))
-      (plsense--try-to-ready)
-      (plsense--info "finished setup for %s" (current-buffer)))
+      (when (plsense--active-p)
+        ;; Key binding
+        (loop for stroke in plsense-ac-trigger-command-keys
+              if (not (string= stroke ""))
+              do (local-set-key (read-kbd-macro stroke) 'plsense--insert-with-ac-trigger-command))
+        (when (and (stringp plsense-popup-help-key)
+                   (not (string= plsense-popup-help-key "")))
+          (local-set-key (read-kbd-macro plsense-popup-help-key) 'plsense-popup-help))
+        (when (and (stringp plsense-display-help-buffer-key)
+                   (not (string= plsense-display-help-buffer-key "")))
+          (local-set-key (read-kbd-macro plsense-display-help-buffer-key) 'plsense-display-help-buffer))
+        ;; For auto-complete
+        (add-to-list 'ac-sources 'ac-source-plsense-include)
+        (add-to-list 'ac-sources 'ac-source-plsense-variable)
+        (add-to-list 'ac-sources 'ac-source-plsense-sub)
+        (add-to-list 'ac-sources 'ac-source-plsense-arrow)
+        (add-to-list 'ac-sources 'ac-source-plsense-hash-member)
+        (add-to-list 'ac-sources 'ac-source-plsense-constructor)
+        (add-to-list 'ac-sources 'ac-source-plsense-quoted)
+        (add-to-list 'ac-sources 'ac-source-plsense-list-element)
+        (add-to-list 'ac-sources 'ac-source-plsense-word)
+        (auto-complete-mode t)
+        ;; For eldoc
+        (set (make-local-variable 'eldoc-documentation-function) 'plsense--echo-method-usage)
+        (turn-on-eldoc-mode)
+        ;; Other
+        (when (and (not plsense--server-start-p)
+                   plsense-server-start-automatically-p)
+          (plsense-server-start))
+        (plsense--try-to-ready)
+        (plsense--info "finished setup for %s" (current-buffer))))
     (yaxception:catch 'error e
       (message "[PlSense] Failed setup : %s" (yaxception:get-text e))
       (plsense--error "failed setup : %s\n%s"
                       (yaxception:get-text e)
                       (yaxception:get-stack-trace-string e)))))
 
-(add-hook 'cperl-mode-hook 'plsense-setup t)
-(add-hook 'perl-mode-hook 'plsense-setup t)
 
-(defun plsense-update ()
-  (when (plsense--active-p)
-    (plsense--update-buffer (current-buffer))))
+;;;###autoload
+(defmacro plsense-server-sync-trigger-ize (func)
+  "Define advice to FUNC for informing changes of current buffer to server.
 
-(add-hook 'after-save-hook 'plsense-update t)
+FUNC is symbol not quoted. e.g. (plsense-server-sync-trigger-ize newline)"
+  `(when (functionp ',func)
+     (defadvice ,func (after plsense-add-source activate)
+       (when (plsense--active-p)
+         (plsense--add-pointed-source)))))
+
+
+;;;###autoload
+(defun plsense-config-default ()
+  "Do setting recommemded configuration."
+  ;; Activate auto-complete and setup plsense automatically when open plsense-enable-modes buffer.
+  (loop for mode in plsense-enable-modes
+        for hook = (intern-soft (concat (symbol-name mode) "-hook"))
+        do (add-to-list 'ac-modes mode)
+        if (and hook
+                (symbolp hook))
+        do (add-hook hook 'plsense-setup-current-buffer t))
+  ;; Request updating contents of current buffer to server automatically when save buffer.
+  (add-hook 'after-save-hook 'plsense-update-current-buffer t)
+  ;; Define advice for informing changes of current buffer to server
+  (plsense-server-sync-trigger-ize newline)
+  (plsense-server-sync-trigger-ize newline-and-indent)
+  (plsense-server-sync-trigger-ize yank)
+  (plsense-server-sync-trigger-ize yas/commit-snippet))
 
 
 (defvar ac-source-plsense-include
@@ -392,7 +476,7 @@
     (document . plsense--get-ac-document)
     (requires . 0)
     (cache)
-    (limit . 100)))
+    (limit . 500)))
 
 (defvar ac-source-plsense-sub
   '((candidates . plsense--get-ac-candidates)
@@ -401,7 +485,7 @@
     (document . plsense--get-ac-document)
     (requires . 0)
     (cache)
-    (limit . 100)))
+    (limit . 500)))
 
 (defvar ac-source-plsense-arrow
   '((candidates . plsense--get-ac-candidates)
@@ -410,7 +494,7 @@
     (document . plsense--get-ac-document)
     (requires . 0)
     (cache)
-    (limit . 100)))
+    (limit . 200)))
 
 (defvar ac-source-plsense-hash-member
   '((candidates . plsense--get-ac-candidates)
@@ -419,7 +503,7 @@
     (document . plsense--get-ac-document)
     (requires . 0)
     (cache)
-    (limit . 100)))
+    (limit . 200)))
 
 (defvar ac-source-plsense-constructor
   '((candidates . plsense--get-ac-candidates)
@@ -428,7 +512,7 @@
     (document . plsense--get-ac-document)
     (requires . 0)
     (cache)
-    (limit . 100)))
+    (limit . 200)))
 
 (defvar ac-source-plsense-quoted
   '((candidates . plsense--get-ac-candidates)
@@ -437,7 +521,7 @@
     (document . plsense--get-ac-document)
     (requires . 0)
     (cache)
-    (limit . 100)))
+    (limit . 200)))
 
 (defvar ac-source-plsense-list-element
   '((candidates . plsense--get-ac-candidates)
@@ -446,7 +530,7 @@
     (document . plsense--get-ac-document)
     (requires . 0)
     (cache)
-    (limit . 100)))
+    (limit . 200)))
 
 (defvar ac-source-plsense-word
   '((candidates . plsense--get-ac-candidates)
@@ -455,7 +539,7 @@
     (document . plsense--get-ac-document)
     (requires . 1)
     (cache)
-    (limit . 100)))
+    (limit . 200)))
 
 (defun plsense--insert-with-ac-trigger-command (n)
   (interactive "p")
@@ -464,7 +548,7 @@
 
 
 (defun plsense--active-p ()
-  (memq major-mode '(perl-mode cperl-mode)))
+  (memq major-mode plsense-enable-modes))
 
 (defun plsense--ready-p ()
   (and plsense--server-start-p
@@ -914,24 +998,6 @@
             (message "[PlSense] '%s' is ready." (buffer-name))
             (sleep-for 2))
           (plsense--cancel-check-ready))))))
-
-
-(defadvice newline (after plsense-add-source activate)
-  (when (plsense--active-p)
-    (plsense--add-pointed-source)))
-
-(defadvice newline-and-indent (after plsense-add-source activate)
-  (when (plsense--active-p)
-    (plsense--add-pointed-source)))
-
-(defadvice yank (after plsense-add-source activate)
-  (when (plsense--active-p)
-    (plsense--add-pointed-source)))
-
-(when (featurep 'yasnippet)
-  (defadvice yas/commit-snippet (after plsense-add-source activate)
-    (when (plsense--active-p)
-      (plsense--add-pointed-source))))
 
 
 (provide 'plsense)

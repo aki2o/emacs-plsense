@@ -102,11 +102,27 @@ Emacs以外に必要なもの
 設定
 ====
 
-    (require 'plsense)
-    ;; ポイントしている要素についてのヘルプをポップアップ表示
-    (setq plsense-popup-help-key "C-:")
-    ;; ポイントしている要素についてのヘルプを別バッファに表示
-    (setq plsense-display-help-buffer-key "M-:")
+```lisp
+(require 'plsense)
+
+;; ポイントしている要素についてのヘルプをポップアップ表示するキー
+(setq plsense-popup-help-key "C-:")
+
+;; ポイントしている要素についてのヘルプを別バッファに表示するキー
+(setq plsense-display-help-buffer-key "M-:")
+
+;; PlSenseサーバプロセスを自動で開始するかどうか。デフォルトはnil
+(setq plsense-server-start-automatically-p t)
+
+;; 本拡張を有効にしたいモードを追加/変更する場合
+(add-to-list 'plsense-enable-modes 'hoge-mode)
+
+;; 入力と同時にauto-complete.elの補完を開始したいキーを追加/変更する場合
+(add-to-list 'plsense-ac-trigger-command-keys "=")
+
+;; 推奨設定を行う
+(plsense-config-default)
+```
 
 
 使い方
@@ -127,7 +143,8 @@ Emacs以外に必要なもの
 ※ 既にPlSenseサーバプロセスが存在する場合でも、Emacs上で`plsense-server-start`は実行する必要があります。  
 ※ 既に起動/停止している場合に、上記起動/停止コマンドを重複して実行してしまっても問題はありません。  
 ※ タイムアウトなどにより、成功していても`... is failed.`と表示される場合があります。  
-※ その場合は以下のサーバ情報を参考に、サーバの状態を確認して下さい。
+※ その場合は以下のサーバ情報を参考に、サーバの状態を確認して下さい。  
+※ 設定により、自動起動が可能。  
 
 ### サーバ情報
 
@@ -167,6 +184,7 @@ PlSenseサーバは、その用途毎に3つのプロセスに分かれていま
 ※ その場合は、`plsense-reopen-current-buffer`を実行して下さい。  
 ※ バッファに紐付けられたファイルが存在しないと有効になりません。  
 ※ find-file時は、一旦ファイルを保存して下さい。  
+※ `plsense-enable-modes`のモード以外のバッファでは有効にはなりません。  
 
 #### バッファ解析状況
 
@@ -248,7 +266,7 @@ https://github.com/aki2o/plsense/blob/master/README-ja.md
 
 補完/ヘルプ表示時にバッファの最新の内容を解析して結果を表示するのが1番良いのですが、
 コストが高いので、別のタイミングで解析を実施することでパフォーマンスが低下しないようにしています。  
-それは、現在のところ、以下を実施した時です。
+上記設定の`plsense-config-default`により、以下のタイミングで解析が実施されます。
 
 * save-buffer
 * newline
@@ -256,13 +274,17 @@ https://github.com/aki2o/plsense/blob/master/README-ja.md
 * yank
 * yas/commit-snippet
 
-上記を行わないと、バッファの編集内容は補完/ヘルプ表示に反映されません。  
+※ 解析が実施されないと、バッファの編集内容は補完/ヘルプ表示に反映されません。  
+※ 解析には簡易的な解析と完全な解析があり、上記の場合、save-buffer以外は簡易的な解析です。  
 
-また、save-buffer以外の解析は、簡易的な解析なので、反映されない要素もあります。  
-できれば、auto-save-buffersなどで頻繁にバッファ保存されるようにして頂けると良いかと思います。  
-現在、把握している簡易的な解析では反映されない要素には以下があります。
+#### バッファ編集中の解析について
 
-* useなどでモジュールからインポートしたメソッドや変数
+* 簡易的な解析は高速ですが、反映されない要素があります。
+    * useなどでモジュールからインポートしたメソッドや変数
+* 完全な解析は、`plsense-update-current-buffer`を実行することで可能です。
+* 簡易的な解析は、`plsense--add-pointed-source`を実行することで可能です。
+* 簡易的な解析のタイミングは、`plsense-server-sync-trigger-ize`を使うことで追加できます。
+* 解析タイミングを追加/変更する場合、これらのヘルプや`plsense-config-default`の定義を参照して下さい。
 
 ### コンテキストの特定
 
