@@ -4,7 +4,7 @@
 EmacsからPlSenseの機能を利用するためのEmacsの拡張です。
 
 PlSenseは、Perl向け開発ツールです。  
-編集中のコンテキストに合った補完/ヘルプ情報を提供します。  
+型推論を用いて、編集中のコンテキストに合った補完/ヘルプ情報を提供します。  
 詳しくは、https://github.com/aki2o/plsense/blob/master/README-ja.md
 
 本拡張により、EmacsでのPerlコーディングにおいて、以下が可能になります。
@@ -15,9 +15,9 @@ PlSenseは、Perl向け開発ツールです。
 
 ### コンテキストに合わせた補完候補の表示
 
-ポイントしているコンテキストが利用しているソースファイルを解析し、適切な補完候補を割り出します。  
-コンテキストの特定は、メソッドの引数/戻り値、配列/ハッシュ/リファレンス要素があっても可能です。  
-特定できるコンテキストには以下があります。
+Perlバッファを開いている時、ポイントしているソースを解析し、
+型推論により、コンテキストに合わせた補完、いわゆるオムニ補完を提供します。  
+以下の位置にポイントしている時、オムニ補完が利用できます。  
 
 * 変数
 * インスタンスメソッド
@@ -31,15 +31,20 @@ PlSenseは、Perl向け開発ツールです。
 ### ヘルプ表示
 
 表示された補完候補やポイントしている要素についてのヘルプを、ポップアップ表示したり別ウィンドウに表示したりできます。  
-対象が変数やメソッドの場合は、PerlDocから該当箇所を抜き出します。
+対象が変数やメソッドの場合は、PerlDocから該当箇所を抜き出します。  
 
 ![demo2](image/demo2.png)
 
-### メソッド情報表示
+### メソッドシグネチャ表示
 
-eldoc.elを用いて、ポイントしているメソッド情報をミニバッファに表示します。
+eldoc.elを用いて、ポイントしているメソッドのシグネチャをミニバッファに表示します。  
 
 ![demo3](image/demo3.png)
+
+### perl-completion.elとの連携
+
+型推論によるオムニ補完が提供できない時は、
+[perl-completion.el](https://github.com/imakado/perl-completion)を使って補完候補を表示します。  
 
 
 デモ
@@ -51,7 +56,7 @@ http://www.youtube.com/watch?v=Q8XDhxqmaXs
 Emacs以外に必要なもの
 =====================
 
-* Windowsの場合、CygwinなどのUnixシェル実行環境
+* Unixシェル (Windowsの場合は、Cygwinなど)
 * Perl実行環境
 * PlSense
 
@@ -101,6 +106,9 @@ plsense.elをダウンロードし、load-pathの通った場所に配置して�
 ;; ポイントしている要素についてのヘルプを別バッファに表示するキー
 (setq plsense-display-help-buffer-key "M-:")
 
+;; ポイントしているメソッドの定義にジャンプするキー
+(setq plsense-jump-to-definition-key "C->")
+
 ;; PlSenseサーバプロセスを自動で開始するかどうか。デフォルトはnil
 (setq plsense-server-start-automatically-p t)
 
@@ -109,6 +117,9 @@ plsense.elをダウンロードし、load-pathの通った場所に配置して�
 
 ;; 入力と同時にauto-complete.elの補完を開始したいキーを追加/変更する場合
 (add-to-list 'plsense-ac-trigger-command-keys "=")
+
+;; perl-completion.elを使って表示した補完候補の文字色を変更する場合(デフォルトは赤)
+(setq plsense-plcmp-candidate-foreground-color nil)
 
 ;; 推奨設定を行う
 (plsense-config-default)
@@ -229,6 +240,15 @@ PlSenseは、文法エラーがあるファイルは解析できません。
 
 ※ 文法エラーのチェックは、シェル上から`perl -c ファイルパス`により実施できます。
 
+### 型推論
+
+PlSenseは、ソースコードの解析により、型推論を行いますが、
+Perlには無数の記述方法があり、その全てを解析できる訳ではありません。  
+扱うコードによっては、型推論に失敗し補完/ヘルプ表示の提供ができない場合もあります。  
+詳しくは、以下を参照して下さい。  
+
+https://github.com/aki2o/plsense/blob/master/README-ja.md
+
 ### 補完/ヘルプ表示内容の最適化
 
 解析は、カレントバッファから順に再帰的に実施されます。  
@@ -275,15 +295,6 @@ https://github.com/aki2o/plsense/blob/master/README-ja.md
 * 簡易的な解析は、`plsense--add-pointed-source`を実行することで可能です。
 * 簡易的な解析のタイミングは、`plsense-server-sync-trigger-ize`を使うことで追加できます。
 * 解析タイミングを追加/変更する場合、これらのヘルプや`plsense-config-default`の定義を参照して下さい。
-
-### コンテキストの特定
-
-PlSenseは、ソースコードの解析により、コンテキストの特定を行っていますが、
-Perlには無数の記述方法があり、その全てを解析できる訳ではありません。  
-扱うコードによっては、解析に失敗し補完/ヘルプ表示の提供ができない場合もあります。  
-詳しくは、以下を参照して下さい。
-
-https://github.com/aki2o/plsense/blob/master/README-ja.md
 
 ### ヘルプの表示内容
 

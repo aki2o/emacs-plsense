@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.2.0
+;; Version: 0.3.0
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,7 @@
 
 ;;; Dependency:
 ;; 
+;; - PlSense ( see <https://github.com/aki2o/plsense> )
 ;; - auto-complete.el ( see <https://github.com/auto-complete/auto-complete> )
 ;; - yaxception.el ( see <https://github.com/aki2o/yaxception> )
 ;; - log4e.el ( see <https://github.com/aki2o/log4e> )
@@ -49,6 +50,7 @@
 ;; ;; Key Binding
 ;; (setq plsense-popup-help-key "C-:")
 ;; (setq plsense-display-help-buffer-key "M-:")
+;; (setq plsense-jump-to-definition-key "C->")
 ;; 
 ;; ;; If you want to start server process automatically,
 ;; (setq plsense-server-start-automatically-p t)
@@ -59,6 +61,9 @@
 ;; ;; If there is the key, which you want to start completion of auto-complete.el,
 ;; (add-to-list 'plsense-ac-trigger-command-keys "=")
 ;; 
+;; ;; If you want to set different/same font-color, which is red in default, when completion using perl-completion.el,
+;; (setq plsense-plcmp-candidate-foreground-color nil)
+;; 
 ;; ;; Do setting recommemded configuration
 ;; (plsense-config-default)
 
@@ -66,15 +71,19 @@
 ;; 
 ;; [EVAL] (autodoc-document-lisp-buffer :type 'user-variable :prefix "plsense-[^\-]" :docstring t)
 ;; `plsense-popup-help-key'
-;; Keystroke for popup help about anything at point.
+;; Keystroke for popup help about something at point.
 ;; `plsense-display-help-buffer-key'
-;; Keystroke for display help buffer about anything at point.
+;; Keystroke for display help buffer about something at point.
+;; `plsense-jump-to-definition-key'
+;; Keystroke for jump to method definition at point.
 ;; `plsense-enable-modes'
 ;; Major modes plsense is enabled on.
 ;; `plsense-server-start-automatically-p'
 ;; Whether start server process when execute `plsense-setup-current-buffer'.
 ;; `plsense-ac-trigger-command-keys'
 ;; Keystrokes for doing `ac-start' with self insert.
+;; `plsense-plcmp-candidate-foreground-color'
+;; Font color of candidate when use perl-completion.el.
 ;; 
 ;;  *** END auto-documentation
 
@@ -96,9 +105,11 @@
 ;; `plsense-buffer-is-ready'
 ;; Show whether or not plsense is available on current buffer.
 ;; `plsense-popup-help'
-;; Popup help about anything for current context.
+;; Popup help about something at point.
 ;; `plsense-display-help-buffer'
-;; Display help buffer about anything for current context.
+;; Display help buffer about something at point.
+;; `plsense-jump-to-definition'
+;; Jump to method definition at point.
 ;; `plsense-delete-help-buffer'
 ;; Delete help buffers.
 ;; `plsense-reopen-current-buffer'
@@ -123,6 +134,7 @@
 
 ;;; Tested On:
 ;; 
+;; - PlSense ... version 0.10
 ;; - Emacs ... GNU Emacs 23.3.1 (i386-mingw-nt5.1.2600) of 2011-08-15 on GNUPACK
 ;; - auto-complete.el ... Version 1.4.0
 ;; - yaxception.el ... Version 0.1
@@ -137,6 +149,9 @@
 (require 'regexp-opt)
 (require 'auto-complete)
 (require 'eldoc)
+(require 'ring)
+(require 'etags)
+(require 'perl-completion nil t)
 (require 'log4e)
 (require 'yaxception)
 
@@ -146,12 +161,17 @@
   :prefix "plsense-")
 
 (defcustom plsense-popup-help-key nil
-  "Keystroke for popup help about anything at point."
+  "Keystroke for popup help about something at point."
   :type 'string
   :group 'plsense)
 
 (defcustom plsense-display-help-buffer-key nil
-  "Keystroke for display help buffer about anything at point."
+  "Keystroke for display help buffer about something at point."
+  :type 'string
+  :group 'plsense)
+
+(defcustom plsense-jump-to-definition-key nil
+  "Keystroke for jump to method definition at point."
   :type 'string
   :group 'plsense)
 
@@ -168,6 +188,13 @@
 (defcustom plsense-ac-trigger-command-keys '("SPC" ">" "$" "@" "%" "&" "{" "[" "(" "/")
   "Keystrokes for doing `ac-start' with self insert."
   :type '(repeat string)
+  :group 'plsense)
+
+(defcustom plsense-plcmp-candidate-foreground-color "red"
+  "Font color of candidate when use perl-completion.el.
+
+If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
+  :type 'string
   :group 'plsense)
 
 
@@ -293,7 +320,7 @@
 
 ;;;###autoload
 (defun plsense-popup-help ()
-  "Popup help about anything for current context."
+  "Popup help about something at point."
   (interactive)
   (yaxception:$
     (yaxception:try
@@ -304,7 +331,8 @@
                  (plsense--set-current-method))
         (let* ((code (plsense--get-source-for-help))
                (doc (plsense--get-server-response (concat "codehelp " code) :waitsec 2 :ignore-done t)))
-          (when (not (string= doc ""))
+          (if (string= doc "")
+              (message "[PlSense] Can't identify anything at point.")
             (popup-tip doc)))))
     (yaxception:catch 'error e
       (message "[PlSense] %s" (yaxception:get-text e))
@@ -314,7 +342,7 @@
 
 ;;;###autoload
 (defun plsense-display-help-buffer ()
-  "Display help buffer about anything for current context."
+  "Display help buffer about something at point."
   (interactive)
   (yaxception:$
     (yaxception:try
@@ -335,6 +363,44 @@
     (yaxception:catch 'error e
       (message "[PlSense] %s" (yaxception:get-text e))
       (plsense--error "failed display help buffer : %s\n%s"
+                      (yaxception:get-text e)
+                      (yaxception:get-stack-trace-string e)))))
+
+;;;###autoload
+(defun plsense-jump-to-definition ()
+  "Jump to method definition at point."
+  (interactive)
+  (yaxception:$
+    (yaxception:try
+      (plsense--try-to-ready)
+      (when (and (plsense--ready-p)
+                 (plsense--set-current-file)
+                 (plsense--set-current-package)
+                 (plsense--set-current-method))
+        (let* ((code (plsense--get-source-for-help))
+               (subinfo (plsense--get-server-response (concat "subinfo " code) :waitsec 4 :ignore-done t))
+               (fpath (when (string-match "^FILE: \\([^\n]+\\)" subinfo)
+                        (match-string-no-properties 1 subinfo)))
+               (row (or (when (string-match "^LINE: \\([0-9]+\\)" subinfo)
+                          (string-to-number (match-string-no-properties 1 subinfo)))
+                        0))
+               (col (or (when (string-match "^COL: \\([0-9]+\\)" subinfo)
+                          (string-to-number (match-string-no-properties 1 subinfo)))
+                        0)))
+          (if (or (not fpath)
+                  (not (file-exists-p fpath))
+                  (= row 0)
+                  (= col 0))
+              (progn (message "[PlSense] Not found definition location at point.")
+                     (plsense--trace "Not found location file[%s] row[%s] col[%s]" fpath row col))
+            (ring-insert find-tag-marker-ring (point-marker))
+            (find-file fpath)
+            (goto-char (point-min))
+            (forward-line (- row 1))
+            (forward-char (- col 1))))))
+    (yaxception:catch 'error e
+      (message "[PlSense] %s" (yaxception:get-text e))
+      (plsense--error "failed jump to definition : %s\n%s"
                       (yaxception:get-text e)
                       (yaxception:get-stack-trace-string e)))))
 
@@ -403,6 +469,9 @@
         (when (and (stringp plsense-display-help-buffer-key)
                    (not (string= plsense-display-help-buffer-key "")))
           (local-set-key (read-kbd-macro plsense-display-help-buffer-key) 'plsense-display-help-buffer))
+        (when (and (stringp plsense-jump-to-definition-key)
+                   (not (string= plsense-jump-to-definition-key "")))
+          (local-set-key (read-kbd-macro plsense-jump-to-definition-key) 'plsense-jump-to-definition))
         ;; For auto-complete
         (add-to-list 'ac-sources 'ac-source-plsense-include)
         (add-to-list 'ac-sources 'ac-source-plsense-variable)
@@ -417,6 +486,10 @@
         ;; For eldoc
         (set (make-local-variable 'eldoc-documentation-function) 'plsense--echo-method-usage)
         (turn-on-eldoc-mode)
+        ;; For perl-completion
+        (yaxception:$
+          (yaxception:try
+            (when (featurep 'perl-completion) (perl-completion-mode t))))
         ;; Other
         (when (and (not plsense--server-start-p)
                    plsense-server-start-automatically-p)
@@ -711,14 +784,26 @@ FUNC is symbol not quoted. e.g. (plsense-server-sync-trigger-ize newline)"
             (setq plsense--last-assist-start-point startpt)
             (setq plsense--last-assist-end-point currpt)
             (setq plsense--last-ac-candidates
-                  (when (and (plsense--set-current-file)
-                             (plsense--set-current-package)
-                             (plsense--set-current-method))
-                    (let* ((ret (plsense--get-server-response (concat "assist " code) :waitsec 2 :ignore-done t))
-                           (ret (replace-regexp-in-string " " "" ret)))
-                      (loop for e in (split-string ret "\n")
-                            if (not (string= e ""))
-                            collect e))))))))
+                  (or (when (and (plsense--set-current-file)
+                                 (plsense--set-current-package)
+                                 (plsense--set-current-method))
+                        (let* ((ret (plsense--get-server-response (concat "assist " code) :waitsec 2 :ignore-done t))
+                               (ret (replace-regexp-in-string " " "" ret)))
+                          (loop for e in (split-string ret "\n")
+                                if (not (string= e ""))
+                                collect e)))
+                      (when (functionp 'plcmp-ac-candidates)
+                        (yaxception:$
+                          (yaxception:try
+                            (if (< (length ac-prefix) ac-auto-start)
+                                (progn (setq plsense--last-assist-start-point 0)
+                                       nil)
+                              (if plsense-plcmp-candidate-foreground-color
+                                  (loop for cand in (plcmp-ac-candidates)
+                                        collect (propertize cand
+                                                            'face
+                                                            `((t (:foreground ,plsense-plcmp-candidate-foreground-color)))))
+                                (plcmp-ac-candidates))))))))))))
     (yaxception:catch 'error e
       (message "[PlSense] %s" (yaxception:get-text e))
       (plsense--error "failed get ac candidates : %s\n%s"
@@ -795,9 +880,9 @@ FUNC is symbol not quoted. e.g. (plsense-server-sync-trigger-ize newline)"
               (loop for line in (split-string subinfo "\n")
                     if (string-match "^NAME: \\([^\n]+\\)" line)
                     do (setq mtdnm (match-string-no-properties 1 line))
-                    if (string-match "^ARG[0-9]: \\([^\n]+\\)" line)
+                    if (string-match "^ARG[1-9]: \\([^\n]+\\)" line)
                     do (push (match-string-no-properties 1 line) args)
-                    if (string-match "^Return: \\([^\n]+\\)" line)
+                    if (string-match "^RETURN: \\([^\n]+\\)" line)
                     do (setq retinfo (match-string-no-properties 1 line)))
               (princ (concat (propertize mtdnm 'face 'font-lock-function-name-face)
                              " ("

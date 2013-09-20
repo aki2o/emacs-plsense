@@ -6,7 +6,7 @@ What's this?
 This is a extension of Emacs that provide interface for PlSense.
 
 PlSense is a development tool for Perl.  
-PlSense provides completion/help optimized for context.  
+PlSense provides completion/help optimized for context by the type inference.  
 For detail, see https://github.com/aki2o/plsense/blob/master/README.md
 
 Using this extension, you can do coding Perl on Emacs like the following.
@@ -17,9 +17,9 @@ Feature
 
 ### Provide a optimized completion by auto-complete.el
 
-When you are on Perl buffer, provide completion optimized for context by auto-complete.el.  
-Can identify the context having Argument/Return of method, element of Array/Hash/Reference.  
-Provide a optimized completion about the following.
+When you are on Perl buffer, provide completion optimized for context using auto-complete.el.  
+The candidates are optimized by the type inference.  
+Provide a optimized completion on the following position of the buffer.  
 
 * Variable
 * Method
@@ -34,9 +34,14 @@ Provide a optimized completion about the following.
 
 ![demo2](image/demo2.png)
 
-### Provide information of method by eldoc.el
+### Show signature of method by eldoc.el
 
 ![demo3](image/demo3.png)
+
+### Use perl-completion.el as supplements
+
+use [perl-completion.el](https://github.com/imakado/perl-completion)
+for compeltion if fail the type inference.  
 
 
 Demo
@@ -48,9 +53,9 @@ http://www.youtube.com/watch?v=Q8XDhxqmaXs
 Requirement
 ===========
 
-* Unix Shell ( e.g. Cygwin on Windows )
+* Unix Shell ( If Windows, e.g. Cygwin )
 * Perl
-* PlSense
+* [PlSense](https://github.com/aki2o/plsense)
 
 
 Install
@@ -98,6 +103,9 @@ Configuration
 ;; Display help buffer about pointed something
 (setq plsense-display-help-buffer-key "M-:")
 
+;; Jump to definition of pointed method
+(setq plsense-jump-to-definition-key "C->")
+
 ;; If you want to start server process automatically,
 (setq plsense-server-start-automatically-p t)
 
@@ -106,6 +114,9 @@ Configuration
 
 ;; If there is the key, which you want to start completion of auto-complete.el,
 (add-to-list 'plsense-ac-trigger-command-keys "=")
+
+;; If you want to set different/same font-color, which is red in default, when completion using perl-completion.el,
+(setq plsense-plcmp-candidate-foreground-color nil)
 
 ;; Do setting recommemded configuration
 (plsense-config-default)
@@ -222,6 +233,13 @@ It means the following.
 
 **Note:** For checking syntax error, execute `perl -c /path/to/file` on shell.
 
+### Type inference
+
+PlSense do the type inference by analyzing a source code of Perl for providing .  
+But, it maybe happen the type inference is failed because Perl has a lot of grammar.  
+In the above case, completion/help is not provided.  
+For detail, see https://github.com/aki2o/plsense/blob/master/README.md
+
 ### Optimize completion/help
 
 Analyzing is started from current buffer recursively in sequence.  
@@ -267,13 +285,6 @@ If you use `plsense-config-default`, the timing is when the following command is
 * You can do a simplified analyzing by executing `plsense--add-pointed-source`.
 * You can add the timing of a simplified analyzing by using `plsense-server-sync-trigger-ize`.
 * If you want to change the analyzing timing, see help of them and definition of `plsense-config-default`.
-
-### Identify context
-
-PlSense identify context by analyzing a source code of Perl.  
-But, can't identify the all context because Perl has a lot of grammar.  
-It maybe happen that analyzing is failed and completion/help is not provided.  
-For detail, see https://github.com/aki2o/plsense/blob/master/README.md
 
 ### Content of help
 
