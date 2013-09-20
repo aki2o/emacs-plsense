@@ -235,10 +235,12 @@ It means the following.
 
 ### Type inference
 
-PlSense do the type inference by analyzing a source code of Perl for providing .  
+PlSense do the type inference by analyzing a source code of Perl.  
 But, it maybe happen the type inference is failed because Perl has a lot of grammar.  
-In the above case, completion/help is not provided.  
-For detail, see https://github.com/aki2o/plsense/blob/master/README.md
+In the above case, a optimized completion/help is not provided.  
+If perl-completion.el is available, Instead provides a completion using perl-completion.el.  
+
+Abount specification of the type inference, see https://github.com/aki2o/plsense/blob/master/README.md
 
 ### Optimize completion/help
 

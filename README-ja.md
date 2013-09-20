@@ -245,9 +245,10 @@ PlSenseは、文法エラーがあるファイルは解析できません。
 PlSenseは、ソースコードの解析により、型推論を行いますが、
 Perlには無数の記述方法があり、その全てを解析できる訳ではありません。  
 扱うコードによっては、型推論に失敗し補完/ヘルプ表示の提供ができない場合もあります。  
-詳しくは、以下を参照して下さい。  
+その場合、perl-completion.elがインストールされていれば、perl-completion.elを使って補完候補を表示します。  
 
-https://github.com/aki2o/plsense/blob/master/README-ja.md
+型推論の仕様については、[こちら](https://github.com/aki2o/plsense/blob/master/README-ja.md)を参照して下さい。  
+
 
 ### 補完/ヘルプ表示内容の最適化
 
@@ -265,9 +266,7 @@ https://github.com/aki2o/plsense/blob/master/README-ja.md
 一旦全ての解析が完了すれば、多数のモジュールをuseしていても最適化に時間はかかりませんが、
 初回は、最適化までにある程度の時間が必要です。  
 どの程度の時間を要するかは、PlSenseサーバの設定、お使いのマシン性能により変化するかと思います。  
-詳しくは、以下を参照して下さい。
-
-https://github.com/aki2o/plsense/blob/master/README-ja.md
+詳しくは、[こちら](https://github.com/aki2o/plsense/blob/master/README-ja.md)を参照して下さい。
 
 また、多数の解析処理が実行されている間は、Emacs自体の挙動も重くなるかと思います。  
 実行されている解析処理の確認は、`plsense-server-task`を実行することで行えます。
