@@ -248,7 +248,7 @@ PlSenseは、文法エラーがあるファイルは解析できません。
 
 そのプロジェクトだけのための固有ライブラリを用意するような、
 ツリー構造で複数ファイルを開発する場合には、
-[プロジェクト情報ファイル](https://github.com/aki2o/plsense/wiki/Library-@ja#projconf)を作成する必要があります。
+[プロジェクト情報ファイル](https://github.com/aki2o/plsense/wiki/Library-@ja#wiki-projconf)を作成する必要があります。
 
 ### 型推論
 
