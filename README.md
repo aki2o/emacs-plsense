@@ -38,6 +38,8 @@ Provide a optimized completion on the following position of the buffer.
 
 ![demo3](image/demo3.png)
 
+### Jump to definition of method
+
 ### Use perl-completion.el as supplements
 
 use [perl-completion.el](https://github.com/imakado/perl-completion)
@@ -76,13 +78,13 @@ Install
 (auto-install-from-url "https://raw.github.com/aki2o/emacs-plsense/master/plsense.el")
 ```
 
-**Note:** Installing each the following dependency is required in this case.
+\* Installing each the following dependency is required in this case.
 
 ### Manually
 
 Download plsense.el and put on your load-path.
 
-**Note:** Installing each the following dependency is required in this case.
+\* Installing each the following dependency is required in this case.
 
 ### Dependency
 
@@ -130,19 +132,19 @@ Usage
 
 * `plsense-version` ... show version of PlSense.
 
-**Note:** Double as a verification of install.
+\* Double as a verification of install.
 
 ### Start/Stop server
 
 * `plsense-server-start` ... start process of PlSense server.
 * `plsense-server-stop` ... stop process of PlSense server.
 
-**Note:** You must finish configuration of PlSense on ahead.  
-**Note:** You must do `plsense-server-start` on Emacs regardless of whether PlSense server process exist.  
-**Note:** Executing the above command redundantly is OK.  
-**Note:** Maybe show `... is failed` despite the success of the above command along of timeout.  
-**Note:** In the case, verify status of PlSense server by seeing 'Information of server' section below.  
-**Note:** You can do `plsense-server-start` automatically by configuration.  
+\* You must finish configuration of PlSense on ahead.  
+\* You must do `plsense-server-start` on Emacs regardless of whether PlSense server process exist.  
+\* Executing the above command redundantly is OK.  
+\* Maybe show `... is failed` despite the success of the above command along of timeout.  
+\* In the case, verify status of PlSense server by seeing 'Information of server' section below.  
+\* You can do `plsense-server-start` automatically by configuration.  
 
 ### Information of server
 
@@ -176,11 +178,11 @@ When start provision of completion/help, show `... is ready.`.
 * `plsense-buffer-is-ready` ... show status about analyzing current buffer.
 * `plsense-reopen-current-buffer` ... restart analyzing current buffer.
 
-**Note:** Not activate automatically on the buffer that opened before executing `plsense-server-start`.  
-**Note:** In the case, execute `plsense-reopen-current-buffer` for activate.  
-**Note:** Not activate automatically if the buffer file is not exists.  
-**Note:** When execute `find-file`, save the buffer.  
-**Note:** Not activate on the buffer of the mode not included in `plsense-enable-modes`.  
+\* Not activate automatically on the buffer that opened before executing `plsense-server-start`.  
+\* In the case, execute `plsense-reopen-current-buffer` for activate.  
+\* Not activate automatically if the buffer file is not exists.  
+\* When execute `find-file`, save the buffer.  
+\* Not activate on the buffer of the mode not included in `plsense-enable-modes`.  
 
 #### Status about analyzing buffer
 
@@ -189,10 +191,10 @@ When start provision of completion/help, show `... is ready.`.
 * No ... not start analyzing.
 * Not Found ... PlSense server can't identify the buffer file.
 
-**Note:** If status is 'No', the buffer maybe not activate. execute `plsense-reopen-current-buffer`.  
-**Note:** If status is 'Not Found', check syntax error. PlSense can not analyze when syntax error.  
-**Note:** If status is 'Not Found' other than above case, see 'Sync server' section below.  
-**Note:** Otherwise, status maybe 'No' or 'Not Found' despite the finish of analyzing.  
+\* If status is 'No', the buffer maybe not activate. execute `plsense-reopen-current-buffer`.  
+\* If status is 'Not Found', check syntax error. PlSense can not analyze when syntax error.  
+\* If status is 'Not Found' other than above case, see 'Sync server' section below.  
+\* Otherwise, status maybe 'No' or 'Not Found' despite the finish of analyzing.  
 
 ### Sync server
 
@@ -203,7 +205,7 @@ If not show completion/help and show error message continuously, execute the fol
 
 * `plsense-update-location` ... inform Plsense server of current context forcibly.
 
-**Note:** If not recovered by the above command, restart PlSense server.  
+\* If not recovered by the above command, restart PlSense server.  
 
 ### Refresh server
 
@@ -217,7 +219,7 @@ In the case, execute the following command.
 
 * `plsense-server-refresh` ... initialize PlSense server and start analyzing the newest source code.
 
-**Note:** Restart PlSense server is also OK. But if running task exists, the result is lost.
+\* Restart PlSense server is also OK. But if running task exists, the result is lost.
 
 
 Restriction
@@ -231,16 +233,21 @@ It means the following.
 * The buffer is not active when open the file that has syntax error.
 * The result of completion/help is not updated when save the file that has syntax error.
 
-**Note:** For checking syntax error, execute `perl -c /path/to/file` on shell.
+\* For checking syntax error, execute `perl -c /path/to/file` on shell.
+
+### Development in project tree
+
+If you develop in project tree which has particular library for the project,
+need to make [ProjectInfoFile](https://github.com/aki2o/plsense/wiki/Library#wiki-projconf).  
 
 ### Type inference
 
 PlSense do the type inference by analyzing a source code of Perl.  
 But, it maybe happen the type inference is failed because Perl has a lot of grammar.  
 In the above case, a optimized completion/help is not provided.  
-If perl-completion.el is available, Instead provides a completion using perl-completion.el.  
+For detail, see https://github.com/aki2o/plsense/wiki/TypeInference.  
 
-Abount specification of the type inference, see https://github.com/aki2o/plsense/blob/master/README.md
+\* If perl-completion.el is available, Instead provides a completion using perl-completion.el.  
 
 ### Optimize completion/help
 
@@ -257,8 +264,8 @@ It apply when you open/edit/save buffer.
 The result of analyzing is saved and used until the file is changed.  
 So, If finish the all analyzing, provision of a optimized completion/help is started soon.  
 
-About the time required for the all analyzing is finished,  
-see https://github.com/aki2o/plsense/blob/master/README.md
+About the time required for the all analyzing is finished,
+see https://github.com/aki2o/plsense/wiki/Resource.  
 
 I guess that the Emacs action become sluggish while a many tasks is running.  
 If you notice it, you can show the task by `plsense-server-task`.
@@ -276,8 +283,8 @@ If you use `plsense-config-default`, the timing is when the following command is
 * yank
 * yas/commit-snippet
 
-**Note:** There are two type of Analyzing, simplified/complete.  
-**Note:** In the above case, Analyzing is simplified at the timing other than save-buffer.  
+\* There are two type of Analyzing, simplified/complete.  
+\* In the above case, Analyzing is simplified at the timing other than save-buffer.  
 
 #### About analyzing in editing buffer
 
