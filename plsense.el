@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.3.0
+;; Version: 0.3.1
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1048,6 +1048,7 @@ FUNC is symbol not quoted. e.g. (plsense-server-sync-trigger-ize newline)"
         (if (or (not (file-exists-p fpath))
                 (file-directory-p fpath)
                 (not (plsense--active-p))
+                (not plsense--server-start-p)
                 (plsense--ready-p))
             (plsense--cancel-check-ready)
           (when (not (eq (process-status procnm) 'run))
