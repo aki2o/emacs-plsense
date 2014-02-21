@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.3.2
+;; Version: 0.4.0
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -144,6 +144,7 @@
 (require 'ring)
 (require 'etags)
 (require 'perl-completion nil t)
+(require 'pos-tip nil t)
 (require 'log4e)
 (require 'yaxception)
 
@@ -998,9 +999,13 @@ FUNC is symbol not quoted. e.g. (plsense-server-sync-trigger-ize newline)"
                  (plsense--set-current-method))
         (let* ((code (plsense--get-source-for-help))
                (doc (plsense--get-server-response (concat "codehelp " code) :waitsec 2 :ignore-done t)))
-          (if (string= doc "")
-              (plsense--show-message "Can't identify anything at point.")
-            (popup-tip doc)))))
+          (cond ((string= doc "")
+                 (plsense--show-message "Can't identify anything at point."))
+                ((and (functionp 'ac-quick-help-use-pos-tip-p)
+                      (ac-quick-help-use-pos-tip-p))
+                 (pos-tip-show doc 'popup-tip-face nil nil 300 popup-tip-max-width))
+                (t
+                 (popup-tip doc))))))
     (yaxception:catch 'error e
       (plsense--show-message (yaxception:get-text e))
       (plsense--error "failed popup help : %s\n%s"
