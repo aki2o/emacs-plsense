@@ -99,26 +99,13 @@ Configuration
 ```lisp
 (require 'plsense)
 
-;; Popup help about pointed something
+;; Key binding
 (setq plsense-popup-help-key "C-:")
-
-;; Display help buffer about pointed something
 (setq plsense-display-help-buffer-key "M-:")
-
-;; Jump to definition of pointed method
 (setq plsense-jump-to-definition-key "C->")
 
-;; If you want to start server process automatically,
-(setq plsense-server-start-automatically-p t)
-
-;; If there is the mode, which you want to enable plsense,
-(add-to-list 'plsense-enable-modes 'hoge-mode)
-
-;; If there is the key, which you want to start completion of auto-complete.el,
-(add-to-list 'plsense-ac-trigger-command-keys "=")
-
-;; If you want to set different/same font-color, which is red in default, when completion using perl-completion.el,
-(setq plsense-plcmp-candidate-foreground-color nil)
+;; Make config suit for you. About the config item, eval the following sexp.
+;; (customize-group "plsense")
 
 ;; Do setting recommemded configuration
 (plsense-config-default)

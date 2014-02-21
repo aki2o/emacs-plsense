@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.4.0
+;; Version: 0.4.1
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -52,10 +52,8 @@
 ;; (setq plsense-display-help-buffer-key "M-:")
 ;; (setq plsense-jump-to-definition-key "C->")
 ;; 
-;; ;; Whether start server process automatically
-;; (setq plsense-server-start-automatically-p t)
-;; 
-;; ;; About other configuration, eval (customize-group "plsense")
+;; ;; Make config suit for you. About the config item, see Customization or eval the following sexp.
+;; ;; (customize-group "plsense")
 ;; 
 ;; (plsense-config-default)
 
