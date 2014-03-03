@@ -62,7 +62,7 @@ Emacs以外に必要なもの
 
 * Unixシェル (Windowsの場合は、Cygwinなど)
 * Perl実行環境
-* PlSense
+* [PlSense](https://github.com/aki2o/plsense)
 
 
 インストール
