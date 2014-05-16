@@ -5,8 +5,8 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.4.1
-;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.1"))
+;; Version: 0.4.3
+;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -287,6 +287,13 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
 ;;;;;;;;;;;;;;;;;;;;;
 ;; PlSense Process
 
+(defsubst plsense--server-response-finished-p ()
+  (when (and plsense--ignore-done-response-p
+             (string-match "\\`Done\n>\\s-\\'" plsense--server-response))
+    (plsense--trace "Ignored done response of server")
+    (setq plsense--server-response ""))
+  (string-match "\n?>\\s-\\'" plsense--server-response))
+
 (defun plsense--get-process ()
   (or (and (processp plsense--proc)
            (eq (process-status (process-name plsense--proc)) 'run)
@@ -305,13 +312,14 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
     (when (plsense--exist-process)
       (kill-process plsense--proc)
       (sleep-for 1))
+    (setq plsense--ignore-done-response-p nil)
     (setq plsense--server-response "")
     (let ((proc (start-process-shell-command "plsense" nil "plsense --interactive"))
           (waiti 0))
       (set-process-filter proc 'plsense--receive-server-response)
       (process-query-on-exit-flag proc)
       (while (and (< waiti 50)
-                  (not (string-match "\n?>\\s-\\'" plsense--server-response)))
+                  (not (plsense--server-response-finished-p)))
         (accept-process-output proc 0.2 nil t)
         (incf waiti))
       (plsense--info "Finished start plsense process.")
@@ -328,9 +336,6 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
       (when (stringp res)
         (cond ((string-match plsense--regexp-error res)
                (plsense--handle-err-response (match-string-no-properties 1 res)))
-              ((and plsense--ignore-done-response-p
-                    (string-match "\\`Done\n>\\s-\\'" res))
-               nil)
               (t
                (setq plsense--server-response (concat plsense--server-response res))))))
     (yaxception:catch 'error e
@@ -380,7 +385,7 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
       (process-send-string proc (concat cmdstr "\n"))
       (plsense--trace "Start wait response from server.")
       (while (and (< waiti maxwaiti)
-                  (not (string-match "\n?>\\s-\\'" plsense--server-response)))
+                  (not (plsense--server-response-finished-p)))
         (accept-process-output proc 0.2 nil t)
         (incf waiti))
       (cond ((not (< waiti maxwaiti))
@@ -603,7 +608,7 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
 
 (defvar ac-source-plsense-variable
   '((candidates . plsense--get-ac-candidates)
-    (prefix . "\\(?:\\$\\|@\\|%\\)\\([a-zA-Z0-9_:]*\\)")
+    (prefix . "\\(?:\\$\\|@\\|%\\|\\$#\\)\\([a-zA-Z0-9_:]*\\)")
     (symbol . "v")
     (document . plsense--get-ac-document)
     (requires . 0)
