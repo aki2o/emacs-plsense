@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.4.4
+;; Version: 0.4.5
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -143,7 +143,6 @@
 (require 'eldoc)
 (require 'ring)
 (require 'etags)
-(require 'perl-completion nil t)
 (require 'pos-tip nil t)
 (require 'log4e)
 (require 'yaxception)
@@ -880,7 +879,10 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
         ;; For perl-completion
         (yaxception:$
           (yaxception:try
-            (when (featurep 'perl-completion) (perl-completion-mode t))))
+            (when (and plsense-use-plcmp-candidate
+                       (or (featurep 'perl-completion)
+                           (require 'perl-completion nil t)))
+              (perl-completion-mode t))))
         ;; Other
         (when (and (not plsense--server-start-p)
                    plsense-server-start-automatically-p)
