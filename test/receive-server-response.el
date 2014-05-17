@@ -5,22 +5,14 @@
   (desc "receive-server-response get response")
   (expect "Done\n> "
     (setq plsense--server-response "")
-    (setq plsense--ignore-done-response-p nil)
-    (plsense--receive-server-response nil "Done\n> ")
-    plsense--server-response)
-  (desc "receive-server-response ignore done")
-  (expect "Done\n> "
-    (setq plsense--ignore-done-response-p t)
     (plsense--receive-server-response nil "Done\n> ")
     plsense--server-response)
   (desc "receive-server-response add response")
   (expect "Done\n> Done\n> "
-    (setq plsense--ignore-done-response-p nil)
     (plsense--receive-server-response nil "Done\n> ")
     plsense--server-response)
   (desc "handle-err-response not yet exist module")
   (expect (mock (plsense--handle-err-response "Not yet exist [Hoge] of [/tmp/hoge.pm]"))
-    (setq plsense--ignore-done-response-p nil)
     (let ((res (concat "ERROR: Not yet exist [Hoge] of [/tmp/hoge.pm]\n"
                        "ERROR: Check the module status is not 'Nothing' by ready command.\n"
                        "Failed\n> ")))
@@ -52,4 +44,3 @@
   (expect "Done\n> Done\n> "
     plsense--server-response)
   )
-
