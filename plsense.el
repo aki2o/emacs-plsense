@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.4.3
+;; Version: 0.4.4
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -72,6 +72,8 @@
 ;; Whether start server process when execute `plsense-setup-current-buffer'.
 ;; `plsense-ac-trigger-command-keys'
 ;; Keystrokes for doing `ac-start' with self insert.
+;; `plsense-use-plcmp-candidate'
+;; Whether to use the function of perl-completion.el
 ;; `plsense-plcmp-candidate-foreground-color'
 ;; Font color of candidate when use perl-completion.el.
 ;; 
@@ -179,6 +181,11 @@
 (defcustom plsense-ac-trigger-command-keys '("SPC" ">" "$" "@" "%" "&" "{" "[" "(" "/")
   "Keystrokes for doing `ac-start' with self insert."
   :type '(repeat string)
+  :group 'plsense)
+
+(defcustom plsense-use-plcmp-candidate t
+  "Whether to use the function of perl-completion.el"
+  :type 'boolean
   :group 'plsense)
 
 (defcustom plsense-plcmp-candidate-foreground-color "red"
@@ -714,7 +721,8 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
                           (loop for e in (split-string ret "\n")
                                 if (not (string= e ""))
                                 collect e)))
-                      (when (functionp 'plcmp-ac-candidates)
+                      (when (and plsense-use-plcmp-candidate
+                                 (functionp 'plcmp-ac-candidates))
                         (yaxception:$
                           (yaxception:try
                             (if (< (length ac-prefix) ac-auto-start)
