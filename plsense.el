@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.4.5
+;; Version: 0.4.6
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -491,6 +491,8 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
 
 (defun plsense--get-current-package ()
   (save-excursion
+    ;; Current may be start line of package definition.
+    (goto-char (point-at-eol))
     (or (when (re-search-backward plsense--regexp-package nil t)
           (match-string-no-properties 1))
         "main")))
@@ -513,6 +515,11 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
 
 (defun plsense--get-current-method ()
   (save-excursion
+    ;; Current may be start line of method definition.
+    (goto-char (point-at-eol))
+    ;; Current may be last line of method definition.
+    (when (string= (format "%c" (char-before)) "}")
+      (forward-char -1))
     (let* ((startpt (point))
            (subnm (when (re-search-backward plsense--regexp-sub nil t)
                     (match-string-no-properties 1)))

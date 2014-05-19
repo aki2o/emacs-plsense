@@ -35,12 +35,19 @@
         (goto-char (point-max))
         (insert (concat "  first { $_->get_name() eq 'hoge' } grep { eval { $_->get_name } } @_;\n"))
         (plsense--get-current-method))))
+  (desc "get-current-method last brace")
+  (expect "get_hoge"
+    (let ((src (tenv-get-tmp-file "plsense" "test")))
+      (with-current-buffer (find-file-noselect src)
+        (goto-char (point-max))
+        (insert (concat "}"))
+        (plsense--get-current-method))))
   (desc "get-current-method exit sub")
   (expect nil
     (let ((src (tenv-get-tmp-file "plsense" "test")))
       (with-current-buffer (find-file-noselect src)
         (goto-char (point-max))
-        (insert (concat "}"))
+        (insert (concat "\n"))
         (plsense--get-current-method))))
   (desc "get-current-method not yet exit sub")
   (expect nil
