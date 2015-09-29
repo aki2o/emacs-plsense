@@ -16,7 +16,7 @@ Feature
 
 ### Omni completion by auto-complete.el
 
-When you are on Perl buffer, provide the optimized completion for context using auto-complete.el.
+When you are on Perl buffer, provide the optimized completion for context using auto-complete.el.  
 It's Omni completion what is called.  
 Provide omni completion on the following position of the buffer.  
 
