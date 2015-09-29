@@ -5,8 +5,7 @@ What's this?
 
 This is a extension of Emacs that provide interface for PlSense.
 
-PlSense is a development tool for Perl.  
-PlSense provides completion/help optimized for context by the type inference.  
+PlSense is a development tool for Perl using the type inference by analyzing source code.  
 For detail, see https://github.com/aki2o/plsense/blob/master/README.md
 
 Using this extension, you can do coding Perl on Emacs like the following.
@@ -15,11 +14,11 @@ Using this extension, you can do coding Perl on Emacs like the following.
 Feature
 =======
 
-### Provide a optimized completion by auto-complete.el
+### Omni completion by auto-complete.el
 
-When you are on Perl buffer, provide completion optimized for context using auto-complete.el.  
-The candidates are optimized by the type inference.  
-Provide a optimized completion on the following position of the buffer.  
+When you are on Perl buffer, provide the optimized completion for context using auto-complete.el.
+It's Omni completion what is called.  
+Provide omni completion on the following position of the buffer.  
 
 * Variable
 * Method
@@ -30,15 +29,15 @@ Provide a optimized completion on the following position of the buffer.
 
 ![demo1](image/demo1.png)
 
-### Provide a optimized help by doing popup or displaying buffer
+### Smart help by doing popup or displaying buffer
 
 ![demo2](image/demo2.png)
 
-### Show signature of method by eldoc.el
+### Sub signature by eldoc.el
 
 ![demo3](image/demo3.png)
 
-### Jump to definition of method
+### Jump to definition
 
 ### Use perl-completion.el as supplements
 
@@ -49,7 +48,9 @@ for compeltion if fail the type inference.
 Demo
 ====
 
-http://www.youtube.com/watch?v=Q8XDhxqmaXs
+![demo](image/demo.gif)
+
+Here is a long version -> <https://www.youtube.com/watch?v=qurNSQjOyK4>
 
 
 Requirement
