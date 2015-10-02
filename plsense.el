@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.4.6
+;; Version: 0.4.7
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -372,11 +372,19 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
 ;;;;;;;;;;;;;;;;;;;
 ;; Access Server
 
-(defun plsense--request-server (cmdstr &optional force)
+(defun* plsense--request-server (cmdstr &key waitsec force)
   (when (or force (plsense--ready-p))
-    (plsense--debug "Start request server. cmdstr[%s]" cmdstr)
-    (process-send-string (plsense--get-process) (concat cmdstr "\n"))
-    t))
+    (plsense--debug "Start request server. cmdstr[%s] waitsec[%s]" cmdstr waitsec)
+    (cond (waitsec
+           ;; with sync
+           (let ((res (plsense--get-server-response cmdstr :waitsec waitsec :force force)))
+             (and (string-match "^Done$" res)
+                  (not (string-match "^Failed$" res))
+                  t)))
+          (t
+           ;; with async
+           (process-send-string (plsense--get-process) (concat cmdstr "\n"))
+           t))))
 
 (defun* plsense--get-server-response (cmdstr &key waitsec force ignore-done)
   (if (and (not force)
@@ -409,25 +417,23 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
   (let ((fpath (buffer-file-name buff)))
     (when (and (file-exists-p fpath)
                (not (file-directory-p fpath))
-               plsense--server-start-p)
-      (let* ((openret (plsense--get-server-response (concat "open " (expand-file-name fpath)) :waitsec 10 :force t))
-             (openret (replace-regexp-in-string "\n" "" openret)))
-        (when (string= openret "Done")
-          (plsense--info "Open %s is done." fpath)
-          (plsense--show-message "Now loading '%s' ..." (buffer-name))
-          (sleep-for 1)
-          (setq plsense--current-file fpath)
-          (setq plsense--current-package "main")
-          (setq plsense--current-method "")
-          (setq plsense--current-ready-status "Now Loading")
-          (plsense--run-ready-check-timer))))))
+               plsense--server-start-p
+               (plsense--request-server (concat "open " (expand-file-name fpath)) :waitsec 10 :force t))
+      (plsense--info "Open %s is done." fpath)
+      (plsense--show-message "Now loading '%s' ..." (buffer-name))
+      (sleep-for 1)
+      (setq plsense--current-file fpath)
+      (setq plsense--current-package "main")
+      (setq plsense--current-method "")
+      (setq plsense--current-ready-status "Now Loading")
+      (plsense--run-ready-check-timer))))
 
 (defun plsense--update-buffer (buff)
   (let* ((fpath (buffer-file-name buff)))
     (when (and (file-exists-p fpath)
                (not (file-directory-p fpath))
                plsense--server-start-p)
-      (plsense--request-server (concat "update " (expand-file-name fpath)) t))))
+      (plsense--request-server (concat "update " (expand-file-name fpath)) :force t))))
 
 (defun plsense--add-pointed-source ()
   (save-excursion
@@ -462,15 +468,12 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
                 (not (file-directory-p fpath))
                 (or force
                     (not (string= fpath plsense--current-file))))
-           (cond ((cond (wait
-                         (string-match "^Done" (plsense--get-server-response (concat "onfile " fpath))))
-                        (t
-                         (plsense--request-server (concat "onfile " fpath))))
+           (cond ((plsense--request-server (concat "onfile " fpath) :waitsec (and wait 1))
                   (setq plsense--current-file fpath)
                   t)
                  (t
-                  (progn (plsense--show-message "Failed set current file for '%s'" fpath)
-                         nil))))
+                  (plsense--show-message "Failed set current file for '%s'" fpath)
+                  nil)))
           (t
            t))))
 
@@ -479,15 +482,12 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
     (if (and (not force)
              (string= pkg plsense--current-package))
         t
-      (cond ((cond (wait
-                    (string-match "^Done" (plsense--get-server-response (concat "onmod " pkg))))
-                   (t
-                    (plsense--request-server (concat "onmod " pkg))))
+      (cond ((plsense--request-server (concat "onmod " pkg) :waitsec (and wait 1))
              (setq plsense--current-package pkg)
              t)
             (t
-             (progn (plsense--show-message "Failed set current package for '%s'" pkg)
-                    nil))))))
+             (plsense--show-message "Failed set current package for '%s'" pkg)
+             nil)))))
 
 (defun plsense--get-current-package ()
   (save-excursion
@@ -503,15 +503,12 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
     (if (and (not force)
              (string= mtd plsense--current-method))
         t
-      (cond ((cond (wait
-                    (string-match "^Done" (plsense--get-server-response (concat "onsub " mtd))))
-                   (t
-                    (plsense--request-server (concat "onsub " mtd))))
+      (cond ((plsense--request-server (concat "onsub " mtd) :waitsec (and wait 1))
              (setq plsense--current-method mtd)
              t)
             (t
-             (progn (plsense--show-message "Failed set current method for '%s'" mtd)
-                    nil))))))
+             (plsense--show-message "Failed set current method for '%s'" mtd)
+             nil)))))
 
 (defun plsense--get-current-method ()
   (save-excursion
@@ -953,43 +950,34 @@ FUNC is symbol not quoted. e.g. (plsense-server-sync-trigger-ize newline)"
   "Start server process."
   (interactive)
   (plsense--show-message "Start server ...")
-  (let* ((ret (plsense--get-server-response "serverstart" :waitsec 60 :force t))
-         (ret (replace-regexp-in-string "\n" "" ret)))
-    (cond ((string= ret "Done")
-           (setq plsense--server-start-p t)
-           (plsense--info "Start server is done.")
-           (plsense--show-message "Start server is done."))
-          (t
-           (plsense--show-message "Start server is failed.")))
-    (sleep-for 1)))
+  (if (not (plsense--request-server "serverstart" :waitsec 60 :force t))
+      (plsense--show-message "Start server is failed.")
+    (setq plsense--server-start-p t)
+    (plsense--info "Start server is done.")
+    (plsense--show-message "Start server is done."))
+  (sleep-for 1))
 
 ;;;###autoload
 (defun plsense-server-stop ()
   "Stop server process."
   (interactive)
-  (let* ((ret (plsense--get-server-response "serverstop" :waitsec 60 :force t))
-         (ret (replace-regexp-in-string "\n" "" ret)))
-    (setq plsense--server-start-p nil)
-    (cond ((string= ret "Done")
-           (plsense--info "Stop server is done.")
-           (plsense--stop-process)
-           (plsense--show-message "Stop server is done."))
-          (t
-           (plsense--show-message "Stop server is failed.")))
-    (sleep-for 1)))
+  (setq plsense--server-start-p nil)
+  (if (not (plsense--request-server "serverstop" :waitsec 60 :force t))
+      (plsense--show-message "Stop server is failed.")
+    (plsense--info "Stop server is done.")
+    (plsense--stop-process)
+    (plsense--show-message "Stop server is done."))
+  (sleep-for 1))
 
 ;;;###autoload
 (defun plsense-server-refresh ()
   "Refresh server process."
   (interactive)
-  (let* ((ret (plsense--get-server-response "refresh" :waitsec 60 :force t))
-         (ret (replace-regexp-in-string "\n" "" ret)))
-    (cond ((string= ret "Done")
-           (plsense--info "Referesh server is done.")
-           (plsense--show-message "Refresh is done."))
-          (t
-           (plsense--show-message "Refresh is failed.")))
-    (sleep-for 1)))
+  (if (not (plsense--request-server "refresh" :waitsec 60 :force t))
+      (plsense--show-message "Refresh is failed.")
+    (plsense--info "Referesh server is done.")
+    (plsense--show-message "Refresh is done."))
+  (sleep-for 1))
 
 ;;;###autoload
 (defun plsense-server-task ()
@@ -1124,14 +1112,11 @@ FUNC is symbol not quoted. e.g. (plsense-server-sync-trigger-ize newline)"
 (defun plsense-delete-all-cache ()
   "Delete all cache data of plsense."
   (interactive)
-  (let* ((ret (plsense--get-server-response "removeall" :waitsec 120))
-         (ret (replace-regexp-in-string "\n" "" ret)))
-    (cond ((string= ret "Done")
-           (plsense--info "Delete all cashe is done.")
-           (plsense--show-message "Delete all cache is done."))
-          (t
-           (plsense--show-message "Delete all cache is failed.")))
-    (sleep-for 1)))
+  (if (not (plsense--request-server "removeall" :waitsec 120))
+      (plsense--show-message "Delete all cache is failed.")
+    (plsense--info "Delete all cashe is done.")
+    (plsense--show-message "Delete all cache is done."))
+  (sleep-for 1))
 
 ;;;###autoload
 (defun plsense-update-current-buffer ()

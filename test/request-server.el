@@ -16,6 +16,6 @@
   (expect (mock (process-send-string 'hoge "svstat\n"))
     (stub plsense--ready-p => nil)
     (stub plsense--get-process => 'hoge)
-    (plsense--request-server "svstat" t))
+    (plsense--request-server "svstat" :force t))
   )
 
