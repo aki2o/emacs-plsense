@@ -5,7 +5,7 @@
 ;; Author: Hiroaki Otsu <ootsuhiroaki@gmail.com>
 ;; Keywords: perl, completion
 ;; URL: https://github.com/aki2o/emacs-plsense
-;; Version: 0.4.7
+;; Version: 0.4.8
 ;; Package-Requires: ((auto-complete "1.4.0") (log4e "0.2.0") (yaxception "0.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -749,7 +749,8 @@ If nil, not change color of `ac-candidate-face'/`ac-selection-face'."
     (yaxception:try
       (if (not (stringp selected))
           ""
-        (set-text-properties 0 (string-width selected) nil selected)
+        ;; ref #10
+        ;; (set-text-properties 0 (string-width selected) nil selected)
         (plsense--trace "Start get ac document : %s" selected)
         (let ((doc (plsense--get-server-response (concat "assisthelp " selected) :waitsec 2 :ignore-done t)))
           (when doc
